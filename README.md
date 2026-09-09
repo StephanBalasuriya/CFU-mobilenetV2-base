@@ -80,10 +80,20 @@ make load
 
 If you don't have any board supported by LiteX Boards you can use Renode or Verilator to simulate it.
 
-To use Renode to execute on a simulator on the host machine (no Vivado or Arty board required), execute:
+Before running build or simulation commands, ensure the Conda environment is activated:
+```sh
+source env/conda/bin/activate cfu-common
+source environment
+```
+
+To use Renode to execute on a simulator on the host machine (no Vivado or Arty board required), navigate to your project directory (e.g., `proj/proj_template`) and execute:
 
 ```sh
+# For GUI mode
 make renode
+
+# For terminal / headless mode
+make renode-headless
 ```
 
 To use Verilator to execute on a cycle-accurate RTL-level simulator (no Vivado or Arty board required), execute:
