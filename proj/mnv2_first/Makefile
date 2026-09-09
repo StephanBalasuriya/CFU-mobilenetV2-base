@@ -17,7 +17,7 @@
 export DEFINES :=
 
 # Uncomment this line to use software defined CFU functions in software_cfu.c
-#DEFINES += CFU_SOFTWARE_DEFINED
+DEFINES += CFU_SOFTWARE_DEFINED
 
 # Uncomment this line to skip debug code (large effect on performance)
 DEFINES += NDEBUG
@@ -49,7 +49,7 @@ RUN_MENU_ITEMS := 3 1
 # bugs with processing multiple batch handling.
 #DEFINES += USE_CONV_SMALL_BATCHES
 
-DEFINES += ACCEL_CONV
+#DEFINES += ACCEL_CONV
 
 # Used by soc/hps.mk
 # Choose the slimmer version of VexRiscv to fit with this large CFU
