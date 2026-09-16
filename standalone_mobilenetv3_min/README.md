@@ -46,16 +46,28 @@ Use the repository's pre-configured `cfu-common` Conda environment:
 
 Run image classification on any image file (e.g. `my_cat.jpg`):
 
+#### Using cfu-common Conda Environment (Recommended):
+
+```bash
+cd /home/victus_linux/cfu-playground-fork/CFU-mobilenetV2-base/standalone_mobilenetv3_min
+
+# Run MobileNetV3 Small Minimalistic profiler & classifier:
+/home/victus_linux/cfu-playground-fork/CFU-Playground/env/conda/envs/cfu-common/bin/python classify_image.py my_cat.jpg --variant small
+
+# Run MobileNetV3 Large Minimalistic profiler & classifier:
+/home/victus_linux/cfu-playground-fork/CFU-Playground/env/conda/envs/cfu-common/bin/python classify_image.py my_cat.jpg --variant large
+```
+
 #### Using TFLite Interpreter (Default & Fast):
 
 ```bash
 cd /home/victus_linux/cfu-playground-fork/CFU-mobilenetV2-base/standalone_mobilenetv3_min
 
 # Classify using default MobileNetV3 Small Minimalistic model:
-python classify_image.py my_cat.jpg
+/home/victus_linux/cfu-playground-fork/CFU-Playground/env/conda/envs/cfu-common/bin/python classify_image.py my_cat.jpg
 
 # Classify using custom model path:
-python classify_image.py my_cat.jpg --model model_mobilenetv3_small_min.tflite
+/home/victus_linux/cfu-playground-fork/CFU-Playground/env/conda/envs/cfu-common/bin/python classify_image.py my_cat.jpg --model model_mobilenetv3_small_min.tflite
 ```
 
 #### Using Full TensorFlow Keras Engine:
