@@ -14,6 +14,8 @@
 # limitations under the License.
 
 import argparse
+import os
+
 from litex.build.xilinx.vivado import vivado_build_args
 from litex.soc.integration.builder import builder_args
 from litex.soc.integration.soc_core import soc_core_args
@@ -23,50 +25,111 @@ from typing import List
 def parse_workflow_args(input: List[str] = None) -> argparse.Namespace:
     """Parses command-line style flags for the workflow.
 
-    All unknown args are discarded to allow multiple parses on args. 
+    All unknown args are discarded to allow multiple parses on args.
 
     Args:
         input: An optional list of strings in the style of sys.argv. Will
           default to argparse's interpretation of sys.argv if omitted.
-    
+
     Returns:
         An argparse Namespace with the parsed, known arguments.
     """
     parser = argparse.ArgumentParser(description='LiteX SoC')
-    parser.add_argument('--build', action='store_true', help='Build bitstream')
-    parser.add_argument('--load', action='store_true', help='Load bitstream')
-    parser.add_argument('--toolchain',
-                        help=('Specify toolchain for implementing '
-                              'gateware (\'vivado\' or \'symbiflow\')'))
-    parser.add_argument('--sys-clk-freq', type=float,
-                        help='System clock frequency')
+
+    parser.add_argument(
+        '--build',
+        action='store_true',
+        help='Build bitstream'
+    )
+
+    parser.add_argument(
+        '--load',
+        action='store_true',
+        help='Load bitstream'
+    )
+
+    parser.add_argument(
+        '--toolchain',
+        help=(
+            'Specify toolchain for implementing '
+            'gateware (\'vivado\' or \'symbiflow\')'
+        )
+    )
+
+    parser.add_argument(
+        '--sys-clk-freq',
+        type=float,
+        help='System clock frequency'
+    )
+
     builder_args(parser)
     soc_core_args(parser)
     vivado_build_args(parser)
-    parser.add_argument('--with-ethernet',
-                        action='store_true',
-                        help='Enable Ethernet support')
-    parser.add_argument('--with-etherbone',
-                        action='store_true',
-                        help='Enable Etherbone support')
-    parser.add_argument('--with-mapped-flash',
-                        action='store_true',
-                        help='Add litespi SPI flash')
-    parser.add_argument("--with-spi-sdcard",
-                        action="store_true",
-                        help="Enable SPI-mode SDCard support")
-    parser.add_argument("--with-video-framebuffer", 
-                        action="store_true", 
-                        help="Enable Video Framebuffer (HDMI)")
-    parser.add_argument('--target',
-                        default='digilent_arty',
-                        help='Specify target board')
-    parser.set_defaults(csr_csv='csr.csv',
-                        uart_name='serial',
-                        uart_baudrate=921600,
-                        cpu_variant='full+cfu',
-                        with_etherbone=False)
-    # Return only the known args
+
+    parser.add_argument(
+        '--with-ethernet',
+        action='store_true',
+        help='Enable Ethernet support'
+    )
+
+    parser.add_argument(
+        '--with-etherbone',
+        action='store_true',
+        help='Enable Etherbone support'
+    )
+
+    parser.add_argument(
+        '--with-mapped-flash',
+        action='store_true',
+        help='Add litespi SPI flash'
+    )
+
+    parser.add_argument(
+        '--with-spi-sdcard',
+        action='store_true',
+        help='Enable SPI-mode SDCard support'
+    )
+
+    parser.add_argument(
+        '--with-video-framebuffer',
+        action='store_true',
+        help='Enable Video Framebuffer (HDMI)'
+    )
+
+    parser.add_argument(
+        '--target',
+        default='digilent_arty',
+        help='Specify target board'
+    )
+
+    # ------------------------------------------------------------
+    # CPU variant selection
+    #
+    # Normal CFU-Playground projects use:
+    #     full+cfu
+    #
+    # CPU-only baseline projects set:
+    #     NO_CFU=1
+    #
+    # Therefore:
+    #     NO_CFU=1  -> full
+    #     otherwise -> full+cfu
+    # ------------------------------------------------------------
+    default_cpu_variant = (
+        'full'
+        if os.environ.get('NO_CFU') == '1'
+        else 'full+cfu'
+    )
+
+    parser.set_defaults(
+        csr_csv='csr.csv',
+        uart_name='serial',
+        uart_baudrate=921600,
+        cpu_variant=default_cpu_variant,
+        with_etherbone=False
+    )
+
+    # Return only the known args.
     if input:
         return parser.parse_known_args(input)[0]
     else:

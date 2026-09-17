@@ -1,0 +1,1 @@
+Place cat.jpg, dog.jpg, etc. in this directory.
