@@ -18,9 +18,11 @@
 
 #include <stdio.h>
 
+#include "cfu.h"
 #include "menu.h"
 #include "models/mnv3/input_00001.h"
 #include "models/mnv3/model_mobilenetv3_small_min.h"
+#include "playground_util/console.h"
 #include "tflite.h"
 
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
@@ -29,6 +31,26 @@ extern "C" {
 };
 #endif
 
+// Prompt user on Renode display to disable CFU or run with CFU
+static void ask_cfu_setting(void) {
+  printf("\n==================================================\n");
+  printf("Disable CFU acceleration? (y/n) [n]: ");
+  char c;
+  do {
+    c = readchar();
+  } while (c == '\n' || c == '\r');
+  putchar(c);
+  putchar('\n');
+  if (c == 'y' || c == 'Y') {
+    set_cfu_enabled(0);
+    printf("--> CFU DISABLED: Running model directly on CPU.\n");
+  } else {
+    set_cfu_enabled(1);
+    printf("--> CFU ENABLED: Running model inside CFU.\n");
+  }
+  printf("==================================================\n\n");
+}
+
 // Initialize the model in TFLM runtime
 static void mnv3_init(void) {
   tflite_load_model(model_mobilenetv3_small_min, model_mobilenetv3_small_min_len);
@@ -36,7 +58,8 @@ static void mnv3_init(void) {
 
 // Run MobileNetV3 Minimalistic classification
 static int32_t mnv3_classify(void) {
-  printf("Running MobileNetV3 Minimalistic model...\n");
+  printf("Running MobileNetV3 Minimalistic model (%s)...\n",
+         is_cfu_enabled() ? "CFU accelerated" : "Pure CPU");
   tflite_classify();
 
   int8_t* output = tflite_get_output();
@@ -44,21 +67,25 @@ static int32_t mnv3_classify(void) {
 }
 
 static void do_classify_zeros(void) {
+  ask_cfu_setting();
   tflite_set_input_zeros();
   int32_t result = mnv3_classify();
   printf("Result for Zeros Input: %ld\n", (long)result);
 }
 
 static void do_classify_test0(void) {
+  ask_cfu_setting();
   tflite_set_input_unsigned(input_00001);
   int32_t result = mnv3_classify();
   printf("Result for Test Input 0: %ld\n", (long)result);
 
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
   char msg_buff[256] = {0};
-  snprintf(msg_buff, sizeof(msg_buff), "Result: %ld", (long)result);
+  snprintf(msg_buff, sizeof(msg_buff), "Result: %ld (%s)", (long)result,
+           is_cfu_enabled() ? "CFU" : "CPU");
   fb_clear();
-  fb_draw_string(0, 10, 0x007FFF00, "MobileNetV3 Min Test 0");
+  fb_draw_string(0, 10, 0x007FFF00,
+                 is_cfu_enabled() ? "MobileNetV3 Min (CFU)" : "MobileNetV3 Min (CPU)");
   fb_draw_buffer(0, 50, 160, 160, (const uint8_t*)input_00001, 3);
   fb_draw_string(0, 220, 0x007FFF00, msg_buff);
   flush_cpu_dcache();

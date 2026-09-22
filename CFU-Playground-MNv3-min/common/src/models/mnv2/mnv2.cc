@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 
+#include "cfu.h"
 #include "menu.h"
 #include "models/mnv2/input_00001_18027.h"
 #include "models/mnv2/input_00001_7281.h"
@@ -26,11 +27,32 @@
 #include "models/mnv2/input_00002_25869.h"
 #include "models/mnv2/input_00004_970.h"
 #include "models/mnv2/model_mobilenetv2_160_035.h"
+#include "playground_util/console.h"
 #include "tflite.h"
 
 extern "C" {
 #include "fb_util.h"
 };
+
+// Prompt user on Renode display to disable CFU or run with CFU
+static void ask_cfu_setting(void) {
+  printf("\n==================================================\n");
+  printf("Disable CFU acceleration? (y/n) [n]: ");
+  char c;
+  do {
+    c = readchar();
+  } while (c == '\n' || c == '\r');
+  putchar(c);
+  putchar('\n');
+  if (c == 'y' || c == 'Y') {
+    set_cfu_enabled(0);
+    printf("--> CFU DISABLED: Running model directly on CPU.\n");
+  } else {
+    set_cfu_enabled(1);
+    printf("--> CFU ENABLED: Running model inside CFU.\n");
+  }
+  printf("==================================================\n\n");
+}
 
 #define NUM_GOLDEN 5
 struct golden_test {
@@ -50,7 +72,8 @@ static void mnv2_init(void) {
 
 // Run classification, after input has been loaded
 static int32_t mnv2_classify() {
-  printf("Running mnv2\n");
+  printf("Running mnv2 (%s)\n",
+         is_cfu_enabled() ? "CFU accelerated" : "Pure CPU");
   tflite_classify();
 
   // Process the inference results.
@@ -59,12 +82,14 @@ static int32_t mnv2_classify() {
 }
 
 static void do_classify_zeros() {
+  ask_cfu_setting();
   tflite_set_input_zeros();
   int32_t result = mnv2_classify();
   printf("Result is %ld\n", result);
 }
 
 static void do_classify_0() {
+  ask_cfu_setting();
   tflite_set_input_unsigned(golden_tests[0].data);
   int32_t result = mnv2_classify();
   printf("Result is %ld\n", result);
@@ -72,9 +97,11 @@ static void do_classify_0() {
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
   char msg_buff[256] = { 0 };
 
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld", result);
+  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
+           is_cfu_enabled() ? "CFU" : "CPU");
   fb_clear();
-  fb_draw_string(0,  10, 0x007FFF00, "Run test 0");
+  fb_draw_string(0,  10, 0x007FFF00,
+                 is_cfu_enabled() ? "Run test 0 (CFU)" : "Run test 0 (CPU)");
   fb_draw_buffer(0,  50, 160, 160, (const uint8_t *)golden_tests[0].data, 3);
   fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
   flush_cpu_dcache();
@@ -83,6 +110,7 @@ static void do_classify_0() {
 }
 
 static void do_classify_1() {
+  ask_cfu_setting();
   tflite_set_input_unsigned(golden_tests[1].data);
   int32_t result = mnv2_classify();
   printf("Result is %ld\n", result);
@@ -90,9 +118,11 @@ static void do_classify_1() {
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
   char msg_buff[256] = { 0 };
 
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld", result);
+  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
+           is_cfu_enabled() ? "CFU" : "CPU");
   fb_clear();
-  fb_draw_string(0,  10, 0x007FFF00, "Run test 1");
+  fb_draw_string(0,  10, 0x007FFF00,
+                 is_cfu_enabled() ? "Run test 1 (CFU)" : "Run test 1 (CPU)");
   fb_draw_buffer(0,  50, 160, 160, (const uint8_t *)golden_tests[1].data, 3);
   fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
   flush_cpu_dcache();
@@ -101,6 +131,7 @@ static void do_classify_1() {
 }
 
 static void do_classify_special() {
+  ask_cfu_setting();
   tflite_set_input_unsigned(input_00001_18027);
   int32_t result = mnv2_classify();
   printf("Result is %ld\n", result);
@@ -108,9 +139,11 @@ static void do_classify_special() {
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
   char msg_buff[256] = { 0 };
 
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld", result);
+  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
+           is_cfu_enabled() ? "CFU" : "CPU");
   fb_clear();
-  fb_draw_string(0, 10, 0x007FFF00, "Run special test");
+  fb_draw_string(0, 10, 0x007FFF00,
+                 is_cfu_enabled() ? "Run special test (CFU)" : "Run special test (CPU)");
   fb_draw_buffer(0, 50, 160, 160, (const uint8_t *)input_00001_18027, 3);
   fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
   flush_cpu_dcache();
@@ -119,6 +152,7 @@ static void do_classify_special() {
 }
 
 static void do_golden_tests() {
+  ask_cfu_setting();
   bool failed = false;
 
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
@@ -138,7 +172,8 @@ static void do_golden_tests() {
 #ifdef CSR_VIDEO_FRAMEBUFFER_BASE
     fb_clear();
     memset(msg_buff, 0x00, sizeof(msg_buff));
-    snprintf(msg_buff, sizeof(msg_buff), "Run golden tests %d", i);
+    snprintf(msg_buff, sizeof(msg_buff), "Run golden tests %d (%s)", i,
+             is_cfu_enabled() ? "CFU" : "CPU");
     fb_draw_string(0, 10, 0x007FFF00, (const char *)msg_buff);
 
     fb_draw_buffer(0, 50, 160, 160, (const uint8_t *)golden_tests[i].data, 3);
@@ -157,6 +192,7 @@ static void do_golden_tests() {
     puts("OK   Golden tests passed");
   }
 }
+
 static struct Menu MENU = {
     "Tests for mnv2 model",
     "mnv2",

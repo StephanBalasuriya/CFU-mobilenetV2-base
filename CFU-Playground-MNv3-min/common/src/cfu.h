@@ -77,4 +77,24 @@
 #define cfu_op(funct3, funct7, rs1, rs2) cfu_op_hw(funct3, funct7, rs1, rs2)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// CFU enable/disable control
+// 0 = CFU enabled, 1 = CFU disabled (pure CPU)
+extern int cfu_op_disabled;
+
+static inline int is_cfu_enabled(void) {
+  return !cfu_op_disabled;
+}
+
+static inline void set_cfu_enabled(int enabled) {
+  cfu_op_disabled = !enabled;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  // CFU_H

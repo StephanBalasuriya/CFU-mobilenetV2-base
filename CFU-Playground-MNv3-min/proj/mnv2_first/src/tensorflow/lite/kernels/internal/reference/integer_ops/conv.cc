@@ -71,7 +71,8 @@ void ConvPerChannel(const ConvParams& params, const int32_t* output_multiplier,
   const int output_width = output_shape.Dims(2);
 
 #ifdef ACCEL_CONV
-  if (pad_width == 0 && pad_height == 0 && dilation_width_factor == 1 &&
+  if (is_cfu_enabled() &&
+      pad_width == 0 && pad_height == 0 && dilation_width_factor == 1 &&
       dilation_height_factor == 1 &&  // params.weights_offset == 0 &&
       output_activation_min == -128 && output_activation_max == 127 &&
       batches == 1) {
