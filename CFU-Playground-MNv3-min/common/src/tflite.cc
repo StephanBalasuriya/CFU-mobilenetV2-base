@@ -230,8 +230,11 @@ void tflite_set_input_mobilenet_pixels(const uint8_t* pixel_data) {
     if (quantized > 127) quantized = 127;
     input->data.int8[i] = static_cast<int8_t>(quantized);
   }
-  printf("Set %d bytes at %p (scale=%f, zero_point=%d)\n", input->bytes,
-         input->data.int8, scale, zero_point);
+  int scale_int = static_cast<int>(scale);
+  int scale_frac = static_cast<int>((scale - static_cast<float>(scale_int)) * 1000000.0f);
+  if (scale_frac < 0) scale_frac = -scale_frac;
+  printf("Set %d bytes at %p (scale=%d.%06d, zero_point=%d)\n", input->bytes,
+         input->data.int8, scale_int, scale_frac, zero_point);
 }
 
 void tflite_set_input_float(const float* data) {
