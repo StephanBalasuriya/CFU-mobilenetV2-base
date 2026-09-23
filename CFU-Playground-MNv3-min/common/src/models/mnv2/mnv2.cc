@@ -17,22 +17,21 @@
 #include "models/mnv2/mnv2.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "cfu.h"
 #include "menu.h"
-#include "models/mnv2/input_00001_18027.h"
-#include "models/mnv2/input_00001_7281.h"
-#include "models/mnv2/input_00001_7425.h"
-#include "models/mnv2/input_00002_2532.h"
-#include "models/mnv2/input_00002_25869.h"
-#include "models/mnv2/input_00004_970.h"
-#include "models/mnv2/model_mobilenetv2_160_035.h"
+#include "models/mnv2/labels.h"
+#include "models/mnv2/model_mobilenetv2_1000_classes.h"
+#include "models/mnv2/image_inputs.h"
 #include "playground_util/console.h"
 #include "tflite.h"
 
+#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
 extern "C" {
 #include "fb_util.h"
 };
+#endif
 
 // Prompt user on Renode display to disable CFU or run with CFU
 static void ask_cfu_setting(void) {
@@ -54,154 +53,119 @@ static void ask_cfu_setting(void) {
   printf("==================================================\n\n");
 }
 
-#define NUM_GOLDEN 5
-struct golden_test {
-  const unsigned char* data;
-  int32_t expected;
-};
-
-struct golden_test golden_tests[] = {
-    {input_00001_7281, -148}, {input_00001_7425, 68}, {input_00002_2532, -112},
-    {input_00002_25869, 134}, {input_00004_970, 128},
-};
-// Initialize everything once
-// deallocate tensors when done
+// Initialize the 1000-class MobileNetV2 model once
 static void mnv2_init(void) {
-  tflite_load_model(model_mobilenetv2_160_035, model_mobilenetv2_160_035_len);
+  tflite_load_model(model_mobilenetv2_1000_classes, model_mobilenetv2_1000_classes_len);
 }
 
-// Run classification, after input has been loaded
-static int32_t mnv2_classify() {
-  printf("Running mnv2 (%s)\n",
+struct TopPrediction {
+  int class_index;
+  uint8_t score;
+};
+
+// Find Top-K predicted classes using insertion sort (no dynamic allocation)
+static void find_top_k(const uint8_t* scores, int num_classes, int k, struct TopPrediction* top_k) {
+  for (int i = 0; i < k; i++) {
+    top_k[i].class_index = -1;
+    top_k[i].score = 0;
+  }
+  for (int i = 0; i < num_classes; i++) {
+    uint8_t val = scores[i];
+    for (int j = 0; j < k; j++) {
+      if (val > top_k[j].score) {
+        for (int m = k - 1; m > j; m--) {
+          top_k[m] = top_k[m - 1];
+        }
+        top_k[j].class_index = i;
+        top_k[j].score = val;
+        break;
+      }
+    }
+  }
+}
+
+// Run inference on a specific ImageSample and print top recognized objects
+static void classify_image_sample(const struct ImageSample* sample) {
+  printf("\nLoading image: %s (%u bytes)...\n", sample->filename, (unsigned)sample->size);
+  tflite_set_input_mobilenet_pixels(sample->data);
+
+  printf("Running MobileNetV2 inference (%s)...\n",
          is_cfu_enabled() ? "CFU accelerated" : "Pure CPU");
   tflite_classify();
 
-  // Process the inference results.
-  int8_t* output = tflite_get_output();
-  return (int32_t)output[1] - (int32_t)output[0];
+  // Read output probabilities across 1001 ImageNet classes
+  uint8_t* output = (uint8_t*)tflite_get_output();
+
+  struct TopPrediction top5[5];
+  find_top_k(output, MNV2_NUM_CLASSES, 5, top5);
+
+  printf("\n=================================================================\n");
+  printf("           CLASSIFICATION RESULTS: %s\n", sample->filename);
+  printf("=================================================================\n");
+  for (int i = 0; i < 5; i++) {
+    int idx = top5[i].class_index;
+    if (idx >= 0 && idx < MNV2_NUM_CLASSES) {
+      int confidence = ((int)top5[i].score * 100) / 255;
+      printf(" Rank #%d: %-32s [Class %4d] -> %3d%% (raw: %3d/255)\n",
+             i + 1, mnv2_get_label(idx), idx, confidence, top5[i].score);
+    }
+  }
+  printf("=================================================================\n");
+
+  const char* best_label = (top5[0].class_index >= 0) ? mnv2_get_label(top5[0].class_index) : "Unknown";
+  int best_conf = ((int)top5[0].score * 100) / 255;
+  printf(">>> IDENTIFIED OBJECT: %s (%d%% confidence) <<<\n\n", best_label, best_conf);
+
+#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
+  char msg_buff[256];
+  snprintf(msg_buff, sizeof(msg_buff), "%s: %s (%d%%)", sample->filename, best_label, best_conf);
+  fb_clear();
+  fb_draw_string(0, 10, 0x007FFF00, sample->filename);
+  fb_draw_buffer(0, 50, 224, 224, sample->data, 3);
+  fb_draw_string(0, 280, 0x007FFF00, msg_buff);
+  flush_cpu_dcache();
+  flush_l2_cache();
+#endif
 }
 
-static void do_classify_zeros() {
+// Classify all images found in images/ one after another
+static void do_classify_all_images(void) {
+  ask_cfu_setting();
+  printf("Found %d image(s) in image database.\n", NUM_IMAGES);
+  for (size_t i = 0; i < NUM_IMAGES; i++) {
+    classify_image_sample(&ALL_IMAGES[i]);
+  }
+}
+
+// Classify the first image
+static void do_classify_first_image(void) {
+  ask_cfu_setting();
+  if (NUM_IMAGES > 0) {
+    classify_image_sample(&ALL_IMAGES[0]);
+  } else {
+    printf("No images available in image database.\n");
+  }
+}
+
+// Run classification on zeros input
+static void do_classify_zeros(void) {
   ask_cfu_setting();
   tflite_set_input_zeros();
-  int32_t result = mnv2_classify();
-  printf("Result is %ld\n", result);
-}
-
-static void do_classify_0() {
-  ask_cfu_setting();
-  tflite_set_input_unsigned(golden_tests[0].data);
-  int32_t result = mnv2_classify();
-  printf("Result is %ld\n", result);
-
-#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
-  char msg_buff[256] = { 0 };
-
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
-           is_cfu_enabled() ? "CFU" : "CPU");
-  fb_clear();
-  fb_draw_string(0,  10, 0x007FFF00,
-                 is_cfu_enabled() ? "Run test 0 (CFU)" : "Run test 0 (CPU)");
-  fb_draw_buffer(0,  50, 160, 160, (const uint8_t *)golden_tests[0].data, 3);
-  fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
-  flush_cpu_dcache();
-  flush_l2_cache();
-#endif
-}
-
-static void do_classify_1() {
-  ask_cfu_setting();
-  tflite_set_input_unsigned(golden_tests[1].data);
-  int32_t result = mnv2_classify();
-  printf("Result is %ld\n", result);
-
-#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
-  char msg_buff[256] = { 0 };
-
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
-           is_cfu_enabled() ? "CFU" : "CPU");
-  fb_clear();
-  fb_draw_string(0,  10, 0x007FFF00,
-                 is_cfu_enabled() ? "Run test 1 (CFU)" : "Run test 1 (CPU)");
-  fb_draw_buffer(0,  50, 160, 160, (const uint8_t *)golden_tests[1].data, 3);
-  fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
-  flush_cpu_dcache();
-  flush_l2_cache();
-#endif
-}
-
-static void do_classify_special() {
-  ask_cfu_setting();
-  tflite_set_input_unsigned(input_00001_18027);
-  int32_t result = mnv2_classify();
-  printf("Result is %ld\n", result);
-
-#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
-  char msg_buff[256] = { 0 };
-
-  snprintf(msg_buff, sizeof(msg_buff), "Result is %ld (%s)", result,
-           is_cfu_enabled() ? "CFU" : "CPU");
-  fb_clear();
-  fb_draw_string(0, 10, 0x007FFF00,
-                 is_cfu_enabled() ? "Run special test (CFU)" : "Run special test (CPU)");
-  fb_draw_buffer(0, 50, 160, 160, (const uint8_t *)input_00001_18027, 3);
-  fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
-  flush_cpu_dcache();
-  flush_l2_cache();
-#endif
-}
-
-static void do_golden_tests() {
-  ask_cfu_setting();
-  bool failed = false;
-
-#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
-  char msg_buff[256] = { 0 };
-#endif  
-
-  for (size_t i = 0; i < NUM_GOLDEN; i++) {
-    tflite_set_input_unsigned(golden_tests[i].data);
-    int actual = mnv2_classify();
-    int expected = golden_tests[i].expected;
-    if (actual != expected) {
-      failed = true;
-      printf("*** Golden test %d failed: %d (actual) != %d (expected))\n", i,
-             actual, expected);
-    }
-
-#ifdef CSR_VIDEO_FRAMEBUFFER_BASE
-    fb_clear();
-    memset(msg_buff, 0x00, sizeof(msg_buff));
-    snprintf(msg_buff, sizeof(msg_buff), "Run golden tests %d (%s)", i,
-             is_cfu_enabled() ? "CFU" : "CPU");
-    fb_draw_string(0, 10, 0x007FFF00, (const char *)msg_buff);
-
-    fb_draw_buffer(0, 50, 160, 160, (const uint8_t *)golden_tests[i].data, 3);
-
-    memset(msg_buff, 0x00, sizeof(msg_buff));
-    snprintf(msg_buff, sizeof(msg_buff), "Result is %d, Expected is %d", actual, expected);
-    fb_draw_string(0, 220, 0x007FFF00, (const char *)msg_buff);
-    flush_cpu_dcache();
-    flush_l2_cache();
-#endif  
-  }
-
-  if (failed) {
-    puts("FAIL Golden tests failed");
-  } else {
-    puts("OK   Golden tests passed");
-  }
+  printf("Running MobileNetV2 with zeros input...\n");
+  tflite_classify();
+  uint8_t* output = (uint8_t*)tflite_get_output();
+  struct TopPrediction top1;
+  find_top_k(output, MNV2_NUM_CLASSES, 1, &top1);
+  printf("Top class for zeros: %s (id: %d, score: %d)\n",
+         mnv2_get_label(top1.class_index), top1.class_index, top1.score);
 }
 
 static struct Menu MENU = {
-    "Tests for mnv2 model",
+    "Tests for MobileNetV2 1000-class Model",
     "mnv2",
     {
-        MENU_ITEM('0', "Run test 0", do_classify_0),
-        MENU_ITEM('1', "Run test 1", do_classify_1),
-        MENU_ITEM('s', "Run special test", do_classify_special),
-        MENU_ITEM('g', "Run golden tests (check for expected outputs)",
-                  do_golden_tests),
+        MENU_ITEM('a', "Classify ALL images in images/ folder", do_classify_all_images),
+        MENU_ITEM('1', "Classify first image", do_classify_first_image),
         MENU_ITEM('z', "Run with zeros input", do_classify_zeros),
         MENU_END,
     },

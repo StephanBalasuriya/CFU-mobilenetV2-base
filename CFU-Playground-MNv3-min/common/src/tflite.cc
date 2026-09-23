@@ -16,6 +16,7 @@
 
 #include "tflite.h"
 
+#include <cmath>
 #include <cstdint>
 
 #include "perf.h"
@@ -90,7 +91,7 @@ constexpr int kTensorArenaSize = const_max<int>(
     5 * 1024,
 #endif
 #ifdef INCLUDE_MODEL_MNV2
-    800 * 1024,
+    4 * 1024 * 1024,
 #endif
 #ifdef INCLUDE_MODEL_MNV3
     800 * 1024,
@@ -216,6 +217,21 @@ void tflite_set_input_unsigned(const unsigned char* data) {
     input->data.int8[i] = static_cast<int>(data[i]) - 128;
   }
   printf("Set %d bytes at %p\n", input->bytes, input->data.int8);
+}
+
+void tflite_set_input_mobilenet_pixels(const uint8_t* pixel_data) {
+  auto input = interpreter->input(0);
+  const float scale = input->params.scale;
+  const int zero_point = input->params.zero_point;
+  for (size_t i = 0; i < input->bytes; i++) {
+    float real_value = pixel_data[i] / 127.5f - 1.0f;
+    int32_t quantized = static_cast<int32_t>(lroundf(real_value / scale)) + zero_point;
+    if (quantized < -128) quantized = -128;
+    if (quantized > 127) quantized = 127;
+    input->data.int8[i] = static_cast<int8_t>(quantized);
+  }
+  printf("Set %d bytes at %p (scale=%f, zero_point=%d)\n", input->bytes,
+         input->data.int8, scale, zero_point);
 }
 
 void tflite_set_input_float(const float* data) {

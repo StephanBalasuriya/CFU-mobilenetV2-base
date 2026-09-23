@@ -34,6 +34,10 @@ void tflite_set_input_zeros(void);
 void tflite_set_input_zeros_float();
 void tflite_set_input(const void* data);
 void tflite_set_input_unsigned(const unsigned char* data);
+// Quantizes raw 0-255 pixel bytes as MobileNet-style preprocessing
+// (pixel/127.5 - 1) using the input tensor's *actual* scale/zero_point,
+// rather than assuming a fixed scale=1/128, zero_point=0 mapping.
+void tflite_set_input_mobilenet_pixels(const uint8_t* pixel_data);
 void tflite_set_input_float(const float* data);
 void tflite_randomize_input(int64_t seed);
 void tflite_set_grid_input(void);
