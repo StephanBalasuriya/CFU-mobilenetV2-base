@@ -17,13 +17,16 @@
 /*
  * labels_mnv3.h
  *
- * Class label helpers for the MobileNetV3-Small Minimalistic model compiled
- * into CFU-Playground firmware.
+ * 1001-class ImageNet label helpers for the MobileNetV3-Small Minimalistic
+ * ImageNet model (model_mobilenetv3_imagenet_224_1000.h) compiled into
+ * CFU-Playground firmware.
  *
- * The current embedded model (model_mobilenetv3_small_min.tflite) was exported
- * with NUM_CLASSES = 2 (binary classification). If you retrain/replace the
- * model with a 1000-class ImageNet variant, increase MNV3_NUM_CLASSES to 1000
- * and expand MNV3_LABELS accordingly (see README_MNV3min_IMAGE_CLASSIFICATION.md).
+ * Reuses the label table from models/mnv2/labels.h (which already contains
+ * all 1001 ImageNet labels) under MNV3_ aliases to avoid duplicating ~18 KB.
+ *
+ * Class layout (matches MNv2 1001-class convention):
+ *   [0]      = "background"
+ *   [1..1000] = ImageNet 1000 classes (tench, goldfish, ... tabby, Egyptian cat, ...)
  */
 
 #ifndef _MNV3_LABELS_H_
@@ -31,33 +34,20 @@
 
 #include <stdbool.h>
 
-/* -----------------------------------------------------------------------
- * Adjust this to match the number of output classes in your .tflite model
- * ----------------------------------------------------------------------- */
-#define MNV3_NUM_CLASSES 2
+/* Pull in the full ImageNet label table from the MNv2 header */
+#include "models/mnv2/labels.h"
 
-/* Labels for the default 2-class binary model.
- * Class 0 = negative / no-object
- * Class 1 = positive / object-present
- *
- * Replace with your own label strings when using a multi-class model.
- */
-static const char* const MNV3_LABELS[MNV3_NUM_CLASSES] = {
-    "class_0_negative",  /* output[0] */
-    "class_1_positive",  /* output[1] */
-};
+/* -------------------------------------------------------------------
+ * MNV3_ aliases — number of classes and label accessor
+ * ------------------------------------------------------------------- */
+#define MNV3_NUM_CLASSES MNV2_NUM_CLASSES   /* 1001 */
 
-/* Retrieve the human-readable label for a given class index */
 static inline const char* mnv3_get_label(int class_id) {
-    if (class_id >= 0 && class_id < MNV3_NUM_CLASSES) {
-        return MNV3_LABELS[class_id];
-    }
-    return "unknown";
+    return mnv2_get_label(class_id);
 }
 
-/* Check if a class index is valid */
 static inline bool mnv3_is_valid_class(int class_id) {
-    return (class_id >= 0 && class_id < MNV3_NUM_CLASSES);
+    return mnv2_is_valid_class(class_id);
 }
 
 #endif  // _MNV3_LABELS_H_

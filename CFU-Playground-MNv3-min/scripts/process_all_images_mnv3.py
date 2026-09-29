@@ -3,12 +3,12 @@
 MobileNetV3 Minimalistic Image Preprocessing Script for CFU-Playground
 
 Converts images in images/ into a C header (image_inputs_mnv3.h) for
-firmware use with the INT8-quantized MNv3-Small-Minimalistic model.
+firmware use with the INT8-quantized MNv3-Small-Minimalistic ImageNet model.
 
 Key differences from the MNv2 preprocessor:
-  - Target resolution: 160x160 (MNv3 model input, not 224x224)
-  - Pixel encoding: signed INT8 [-128, 127] (quantized, zero-point=0, scale=1/128)
-  - Output header:  common/src/models/mnv3/image_inputs_mnv3.h
+  - Target resolution: 224x224 (matches ImageNet MNv3-Small-Min model)
+  - Pixel encoding:    signed INT8 (zero_point=-128) via: int8 = uint8 - 128
+  - Output header:     common/src/models/mnv3/image_inputs_mnv3.h
 """
 
 import os
@@ -23,8 +23,8 @@ OUTPUT_HEADER = os.path.join(
     PROJECT_ROOT, "common", "src", "models", "mnv3", "image_inputs_mnv3.h"
 )
 
-# MNv3-Small-Min uses 160x160 INT8 input
-TARGET_SIZE = (160, 160)
+# MNv3-Small-Min ImageNet model uses 224x224 INT8 input
+TARGET_SIZE = (224, 224)
 VALID_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 
 
@@ -39,15 +39,16 @@ def sanitize_identifier(name: str) -> str:
 def preprocess_image_mnv3(img_path: str) -> np.ndarray:
     """
     Load an image and convert it to the INT8 representation expected by
-    the quantized MNv3-Small-Min firmware model.
+    the quantized MNv3-Small-Min ImageNet firmware model.
 
-    MobileNetV3 preprocessing maps [0, 255] uint8 → [-128, 127] int8
-    using: int8_value = uint8_value - 128
-    (zero_point = 128, scale = 1/128 matches tf.int8 quantized export)
+    The generated model has input quantisation:
+      scale = 1.0, zero_point = -128
+    which means: int8_value = uint8_value - 128
+    (identical to what tflite_set_input_unsigned() does in tflite.cc)
     """
     img = Image.open(img_path).convert("RGB").resize(TARGET_SIZE, Image.Resampling.LANCZOS)
     arr_uint8 = np.array(img, dtype=np.uint8).flatten()
-    # Shift [0,255] → [-128,127]
+    # Shift [0, 255] uint8 → [-128, 127] int8
     arr_int8 = arr_uint8.astype(np.int16) - 128
     return arr_int8.astype(np.int8)
 

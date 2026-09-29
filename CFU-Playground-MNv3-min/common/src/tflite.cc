@@ -94,7 +94,7 @@ constexpr int kTensorArenaSize = const_max<int>(
     4 * 1024 * 1024,
 #endif
 #ifdef INCLUDE_MODEL_MNV3
-    800 * 1024,
+    4 * 1024 * 1024,   // 4 MB for MNv3-Small-Min 224x224 ImageNet
 #endif
 #ifdef INCLUDE_MODEL_HPS
     256 * 1024,
