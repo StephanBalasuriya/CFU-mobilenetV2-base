@@ -102,6 +102,13 @@ def main():
     print(f"    Output dtype={out['dtype'].__name__}  shape={out['shape']}  "
           f"scale={out['quantization'][0]:.6f}  zero_point={out['quantization'][1]}")
 
+    # 5. Generate Golden Test Vector (.dat) for 224x224x3
+    print("\n[5/5] Generating golden test vector (input_00001.dat)...")
+    dat_path = os.path.join(SCRIPT_DIR, "input_00001.dat")
+    sample_input = np.random.randint(-128, 127, size=inp['shape'], dtype=np.int8)
+    sample_input.tofile(dat_path)
+    print(f"    Saved golden test vector: {dat_path} ({os.path.getsize(dat_path):,} bytes)")
+
     print("\n" + "=" * 65)
     print("  DONE — run scripts/convert_mnv3_model.sh to generate .h")
     print("=" * 65)

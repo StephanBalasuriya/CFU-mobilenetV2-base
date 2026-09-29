@@ -39,15 +39,22 @@
 
 /* -------------------------------------------------------------------
  * MNV3_ aliases — number of classes and label accessor
+ *
+ * MobileNetV3Small trained on ImageNet outputs 1000 classes (0..999).
+ * The mnv2 labels table (MNV2_LABELS) has 1001 entries with "background"
+ * at index 0. Therefore, class_id maps to MNV2_LABELS[class_id + 1].
  * ------------------------------------------------------------------- */
-#define MNV3_NUM_CLASSES MNV2_NUM_CLASSES   /* 1001 */
+#define MNV3_NUM_CLASSES 1000
 
 static inline const char* mnv3_get_label(int class_id) {
-    return mnv2_get_label(class_id);
+    if (class_id >= 0 && class_id < MNV3_NUM_CLASSES) {
+        return mnv2_get_label(class_id + 1);
+    }
+    return "unknown";
 }
 
 static inline bool mnv3_is_valid_class(int class_id) {
-    return mnv2_is_valid_class(class_id);
+    return (class_id >= 0 && class_id < MNV3_NUM_CLASSES);
 }
 
 #endif  // _MNV3_LABELS_H_
