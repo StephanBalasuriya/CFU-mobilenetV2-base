@@ -36,6 +36,29 @@ extern "C" {
 
 #define CFU_MARK_INPUT_READ_FINISHED() CFU_GET(112)
 
+static inline uint32_t cfu_dw3x3_load(uint32_t in0, uint32_t in1) {
+  return cfu_op0(40, in0, in1);
+}
+
+static inline uint32_t cfu_dw3x3_run() {
+  return cfu_op0(41, 0, 0);
+}
+
+static inline uint32_t cfu_dw3x3_get_result() {
+  return cfu_op0(42, 0, 0);
+}
+
+static inline uint32_t cfu_dw3x3_configure(
+    uint32_t input_offset, uint32_t weight_offset) {
+  return cfu_op0(43, input_offset, weight_offset);
+}
+
+#define CFU_DW3X3_LOAD(in0, in1) cfu_dw3x3_load(in0, in1)
+#define CFU_DW3X3_RUN() cfu_dw3x3_run()
+#define CFU_DW3X3_GET_RESULT() cfu_dw3x3_get_result()
+#define CFU_DW3X3_CONFIGURE(input_offset, weight_offset) \
+  cfu_dw3x3_configure(input_offset, weight_offset)
+
 #define EBRAM_DEPTH_BITS (16 * 1024)
 #define EBRAM_DEPTH_BYTES (EBRAM_DEPTH_BITS / 8)
 #define EBRAM_DEPTH_WORDS (EBRAM_DEPTH_BYTES / 4)
