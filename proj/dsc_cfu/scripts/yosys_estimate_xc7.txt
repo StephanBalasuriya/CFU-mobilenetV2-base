@@ -1,0 +1,34 @@
+
+4. Printing statistics.
+
+=== Cfu ===
+
+   Number of wires:              35198
+   Number of wire bits:         259320
+   Number of public wires:        1496
+   Number of public wire bits:   40343
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:              76946
+     BUFG                            1
+     CARRY4                       8860
+     DSP48E1                       196
+     FDRE                         7449
+     FDSE                          342
+     IBUF                           78
+     INV                         11397
+     LUT1                         1100
+     LUT2                        10649
+     LUT3                         8525
+     LUT4                          271
+     LUT5                         8175
+     LUT6                         9809
+     MUXF7                        8156
+     MUXF8                        1735
+     OBUF                           34
+     RAMB18E1                       68
+     RAMB36E1                       36
+     SRL16E                         63
+     SRLC32E                         2
+
