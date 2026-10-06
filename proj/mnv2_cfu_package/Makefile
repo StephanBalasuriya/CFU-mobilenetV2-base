@@ -24,4 +24,16 @@ endif
 
 RUN_MENU_ITEMS := 3 1
 
+LABELS_SOURCE = $(CFU_ROOT)/proj/mnv2_baseline/mobilenetv2_a035_224_int8_labels.txt
+LABELS_HEADER = $(BUILD_DIR)/src/imagenet_labels.h
+
+BUILD_DIR_EXTRA_DEP += $(LABELS_HEADER)
+
 include ../proj.mk
+
+
+$(LABELS_HEADER): $(LABELS_SOURCE) $(PROJ_DIR)/tools/generate_labels_header.py
+	@mkdir -p $(dir $@)
+	python3 $(PROJ_DIR)/tools/generate_labels_header.py \
+		$(LABELS_SOURCE) \
+		$@

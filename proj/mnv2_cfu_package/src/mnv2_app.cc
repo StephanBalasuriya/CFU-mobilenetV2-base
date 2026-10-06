@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "cat_image.h"
+#include "imagenet_labels.h"
 #include "models/mnv2/mobilenetv2_a035_224_int8.h"
 #include "tflite.h"
 
@@ -502,6 +503,13 @@ static void print_top_outputs() {
       best_index
   );
 
+  printf(
+      "Prediction class label: %s\n",
+      best_index < kImageNetLabelCount
+          ? kImageNetLabels[best_index]
+          : "unknown"
+  );
+
 
   printf(
       "========================================\n"
@@ -641,8 +649,8 @@ void mnv2_run(void) {
       "----------------------------------------\n"
   );
 
-
   tflite_classify();
+  printf("3x3 depthwise CFU used\n");
 
 
   // ----------------------------------------------------------

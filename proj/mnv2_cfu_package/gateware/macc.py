@@ -13,13 +13,78 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from amaranth import Cat, Signal, signed
+from amaranth import Array, Cat, Mux, Signal, signed
 
 from amaranth_cfu import all_words, SimpleElaboratable, tree_sum
 
 from .delay import Delayer
 from .post_process import PostProcessor
 from .registerfile import Xetter
+
+
+class Depthwise3x3Mac(SimpleElaboratable):
+    """Explicit 3x3 signed INT8 depthwise MAC datapath.
+
+    Three packed words are loaded for inputs and weights.  The first two
+    words contain four bytes and the last word contains the final byte.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.load = Signal()
+        self.load_input = Signal(32)
+        self.load_weight = Signal(32)
+        self.configure = Signal()
+        self.input_offset = Signal(signed(9))
+        self.weight_offset = Signal(signed(9))
+        self.run = Signal()
+        self.result = Signal(signed(32))
+
+    def elab(self, m):
+        input_words = Array(Signal(32, name=f"dw_input_{n}") for n in range(3))
+        weight_words = Array(Signal(32, name=f"dw_weight_{n}") for n in range(3))
+        load_index = Signal(range(3))
+        input_offset = Signal(signed(9))
+        weight_offset = Signal(signed(9))
+        result = Signal(signed(32))
+
+        m.d.comb += self.result.eq(result)
+        with m.If(self.configure):
+            m.d.sync += [
+                input_offset.eq(self.input_offset),
+                weight_offset.eq(self.weight_offset),
+                load_index.eq(0),
+            ]
+        with m.Elif(self.load):
+            with m.Switch(load_index):
+                for index in range(3):
+                    with m.Case(index):
+                        m.d.sync += [
+                            input_words[index].eq(self.load_input),
+                            weight_words[index].eq(self.load_weight),
+                        ]
+            m.d.sync += load_index.eq(Mux(load_index == 2, 0, load_index + 1))
+
+        products = []
+        for word_index, (input_word, weight_word) in enumerate(
+                zip(input_words, weight_words)):
+            for byte_index, (input_byte, weight_byte) in enumerate(zip(
+                    all_words(input_word, 8), all_words(weight_word, 8))):
+                if word_index == 2 and byte_index > 0:
+                    continue
+                input_value = Signal(signed(10))
+                weight_value = Signal(signed(10))
+                product = Signal(signed(20))
+                m.d.comb += [
+                    input_value.eq(input_byte.as_signed() + input_offset),
+                    weight_value.eq(weight_byte.as_signed() + weight_offset),
+                    product.eq(input_value * weight_value),
+                ]
+                products.append(product)
+
+        mac_result = tree_sum(products)
+        with m.If(self.run):
+            m.d.sync += result.eq(mac_result)
 
 
 class Madd4Pipeline(SimpleElaboratable):
