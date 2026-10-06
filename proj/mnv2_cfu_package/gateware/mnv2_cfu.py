@@ -126,8 +126,8 @@ class Mnv2RegisterInstruction(RegisterFileInstruction):
         class RunXetter(Xetter):
             def elab(self, module):
                 module.d.comb += [
-                    self.done.eq(self.start),
                     dw.run.eq(self.start),
+                    self.done.eq(dw.done),
                 ]
 
         class ResultXetter(Xetter):

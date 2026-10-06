@@ -1,4 +1,3 @@
-from amaranth.sim import Settle
 from amaranth_cfu import TestBase
 
 from .macc import Depthwise3x3Mac
@@ -38,7 +37,11 @@ class Depthwise3x3MacTest(TestBase):
                 yield self.dut.run.eq(1)
                 yield
                 yield self.dut.run.eq(0)
-                yield Settle()
+
+                # Wait for the pipelined accumulation to finish
+                while not (yield self.dut.done):
+                    yield
+
                 expected = sum(
                     (x + input_offset) * (w + weight_offset)
                     for x, w in zip(inputs, weights))
