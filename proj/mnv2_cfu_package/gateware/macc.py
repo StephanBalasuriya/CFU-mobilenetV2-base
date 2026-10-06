@@ -25,66 +25,243 @@ from .registerfile import Xetter
 class Depthwise3x3Mac(SimpleElaboratable):
     """Explicit 3x3 signed INT8 depthwise MAC datapath.
 
-    Three packed words are loaded for inputs and weights.  The first two
-    words contain four bytes and the last word contains the final byte.
+    Three packed words are loaded for inputs and weights.
+    The first two words contain four bytes and the last word
+    contains the final byte.
+
+    Products are registered during LOAD.
+
+    RUN starts a 3-stage pipelined accumulation:
+        Stage 1: pairwise sums
+        Stage 2: partial sums
+        Stage 3: final sum
+
+    The DONE signal is asserted only when the final result is ready.
     """
 
     def __init__(self):
         super().__init__()
+
         self.load = Signal()
         self.load_input = Signal(32)
         self.load_weight = Signal(32)
+
         self.configure = Signal()
         self.input_offset = Signal(signed(9))
         self.weight_offset = Signal(signed(9))
+
         self.run = Signal()
         self.result = Signal(signed(32))
 
+        # Asserted when a RUN operation has completed.
+        self.done = Signal()
+
     def elab(self, m):
-        input_words = Array(Signal(32, name=f"dw_input_{n}") for n in range(3))
-        weight_words = Array(Signal(32, name=f"dw_weight_{n}") for n in range(3))
         load_index = Signal(range(3))
+
         input_offset = Signal(signed(9))
         weight_offset = Signal(signed(9))
+
+        # ------------------------------------------------------------
+        # Registered products
+        # ------------------------------------------------------------
+
+        product_regs = [
+            Signal(signed(20), name=f"dw_product_{n}")
+            for n in range(9)
+        ]
+
+        # ------------------------------------------------------------
+        # Pipelined accumulation registers
+        # ------------------------------------------------------------
+
+        # Stage 1:
+        #   P0 + P1
+        #   P2 + P3
+        #   P4 + P5
+        #   P6 + P7
+        #   P8 passes through
+        stage1 = [
+            Signal(signed(21), name=f"dw_sum1_{n}")
+            for n in range(5)
+        ]
+
+        # Stage 2:
+        #   S0 + S1
+        #   S2 + S3
+        #   S4 passes through
+        stage2 = [
+            Signal(signed(22), name=f"dw_sum2_{n}")
+            for n in range(3)
+        ]
+
+        # Final accumulated result.
         result = Signal(signed(32))
 
-        m.d.comb += self.result.eq(result)
+        # Pipeline state:
+        #
+        # 0 = idle
+        # 1 = stage 1 completed
+        # 2 = stage 2 completed
+        # 3 = final result completed / done
+        pipeline_state = Signal(range(4))
+
+        m.d.comb += [
+            self.result.eq(result),
+            self.done.eq(pipeline_state == 3),
+        ]
+
+        # ------------------------------------------------------------
+        # CONFIGURE
+        # ------------------------------------------------------------
+
         with m.If(self.configure):
             m.d.sync += [
                 input_offset.eq(self.input_offset),
                 weight_offset.eq(self.weight_offset),
                 load_index.eq(0),
             ]
+
+        # ------------------------------------------------------------
+        # LOAD
+        #
+        # LOAD 0 -> products 0..3
+        # LOAD 1 -> products 4..7
+        # LOAD 2 -> product 8
+        # ------------------------------------------------------------
+
         with m.Elif(self.load):
-            with m.Switch(load_index):
-                for index in range(3):
-                    with m.Case(index):
-                        m.d.sync += [
-                            input_words[index].eq(self.load_input),
-                            weight_words[index].eq(self.load_weight),
-                        ]
-            m.d.sync += load_index.eq(Mux(load_index == 2, 0, load_index + 1))
 
-        products = []
-        for word_index, (input_word, weight_word) in enumerate(
-                zip(input_words, weight_words)):
-            for byte_index, (input_byte, weight_byte) in enumerate(zip(
-                    all_words(input_word, 8), all_words(weight_word, 8))):
-                if word_index == 2 and byte_index > 0:
-                    continue
-                input_value = Signal(signed(10))
-                weight_value = Signal(signed(10))
-                product = Signal(signed(20))
+            input_bytes = list(all_words(self.load_input, 8))
+            weight_bytes = list(all_words(self.load_weight, 8))
+
+            load_products = []
+
+            for byte_index in range(4):
+
+                input_value = Signal(
+                    signed(10),
+                    name=f"dw_load_input_{byte_index}"
+                )
+
+                weight_value = Signal(
+                    signed(10),
+                    name=f"dw_load_weight_{byte_index}"
+                )
+
+                product = Signal(
+                    signed(20),
+                    name=f"dw_load_product_{byte_index}"
+                )
+
                 m.d.comb += [
-                    input_value.eq(input_byte.as_signed() + input_offset),
-                    weight_value.eq(weight_byte.as_signed() + weight_offset),
-                    product.eq(input_value * weight_value),
-                ]
-                products.append(product)
+                    input_value.eq(
+                        input_bytes[byte_index].as_signed()
+                        + input_offset
+                    ),
 
-        mac_result = tree_sum(products)
-        with m.If(self.run):
-            m.d.sync += result.eq(mac_result)
+                    weight_value.eq(
+                        weight_bytes[byte_index].as_signed()
+                        + weight_offset
+                    ),
+
+                    product.eq(
+                        input_value * weight_value
+                    ),
+                ]
+
+                load_products.append(product)
+
+            with m.Switch(load_index):
+
+                with m.Case(0):
+                    m.d.sync += [
+                        product_regs[0].eq(load_products[0]),
+                        product_regs[1].eq(load_products[1]),
+                        product_regs[2].eq(load_products[2]),
+                        product_regs[3].eq(load_products[3]),
+                    ]
+
+                with m.Case(1):
+                    m.d.sync += [
+                        product_regs[4].eq(load_products[0]),
+                        product_regs[5].eq(load_products[1]),
+                        product_regs[6].eq(load_products[2]),
+                        product_regs[7].eq(load_products[3]),
+                    ]
+
+                with m.Case(2):
+                    m.d.sync += [
+                        product_regs[8].eq(load_products[0]),
+                    ]
+
+            m.d.sync += load_index.eq(
+                Mux(
+                    load_index == 2,
+                    0,
+                    load_index + 1
+                )
+            )
+
+        # ------------------------------------------------------------
+        # PIPELINED ACCUMULATION
+        # ------------------------------------------------------------
+
+        with m.Else():
+
+            # --------------------------------------------------------
+            # Start pipeline
+            # --------------------------------------------------------
+
+            with m.If(
+                (pipeline_state == 0) &
+                self.run
+            ):
+                m.d.sync += [
+                    # Stage 1
+                    stage1[0].eq(product_regs[0] + product_regs[1]),
+                    stage1[1].eq(product_regs[2] + product_regs[3]),
+                    stage1[2].eq(product_regs[4] + product_regs[5]),
+                    stage1[3].eq(product_regs[6] + product_regs[7]),
+                    stage1[4].eq(product_regs[8]),
+
+                    pipeline_state.eq(1),
+                ]
+
+            # --------------------------------------------------------
+            # Stage 2
+            # --------------------------------------------------------
+
+            with m.Elif(pipeline_state == 1):
+                m.d.sync += [
+                    stage2[0].eq(stage1[0] + stage1[1]),
+                    stage2[1].eq(stage1[2] + stage1[3]),
+                    stage2[2].eq(stage1[4]),
+
+                    pipeline_state.eq(2),
+                ]
+
+            # --------------------------------------------------------
+            # Stage 3 / final result
+            # --------------------------------------------------------
+
+            with m.Elif(pipeline_state == 2):
+                m.d.sync += [
+                    result.eq(
+                        stage2[0] +
+                        stage2[1] +
+                        stage2[2]
+                    ),
+
+                    pipeline_state.eq(3),
+                ]
+
+            # --------------------------------------------------------
+            # DONE state
+            # --------------------------------------------------------
+
+            with m.Elif(pipeline_state == 3):
+                m.d.sync += pipeline_state.eq(0)
 
 
 class Madd4Pipeline(SimpleElaboratable):
