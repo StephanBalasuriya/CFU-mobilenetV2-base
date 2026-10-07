@@ -18,10 +18,10 @@ from amaranth.lib.fifo import SyncFIFOBuffered
 from amaranth_cfu import simple_cfu, DualPortMemory, is_pysim_run
 
 from . import config
-from .macc import Accumulator, ByteToWordShifter, Madd4Pipeline
+from .macc import Accumulator, ByteToWordShifter, Depthwise3x3Mac, Madd4Pipeline
 from .post_process import PostProcessor
 from .store import CircularIncrementer, FilterValueFetcher, InputStore, InputStoreSetter, NextWordGetter, StoreSetter
-from .registerfile import RegisterFileInstruction, RegisterSetter
+from .registerfile import RegisterFileInstruction, RegisterSetter, Xetter
 from .sequencing import Sequencer
 
 
@@ -101,6 +101,66 @@ class Mnv2RegisterInstruction(RegisterFileInstruction):
         ]
         return ins, read_finished
 
+    def _make_depthwise_3x3(self, m):
+        dw = Depthwise3x3Mac()
+        m.submodules['depthwise_3x3'] = dw
+
+        class LoadXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    self.done.eq(self.start),
+                    dw.load.eq(self.start),
+                    dw.load_input.eq(self.in0),
+                    dw.load_weight.eq(self.in1),
+                ]
+
+        class ConfigureXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    self.done.eq(self.start),
+                    dw.configure.eq(self.start),
+                    dw.input_offset.eq(self.in0),
+                    dw.weight_offset.eq(self.in1),
+                ]
+
+        class RunXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    dw.run.eq(self.start),
+                    self.done.eq(dw.done),
+                ]
+
+        class ShiftRightXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    self.done.eq(self.start),
+                    dw.shift.eq(self.start),
+                    dw.shift_column.eq(self.in0),
+                ]
+
+        class ResultXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    self.done.eq(self.start),
+                    self.output.eq(dw.result),
+                ]
+
+        load = LoadXetter()
+        run = RunXetter()
+        result = ResultXetter()
+        configure = ConfigureXetter()
+        shift_right = ShiftRightXetter()
+        m.submodules['depthwise_3x3_load'] = load
+        m.submodules['depthwise_3x3_run'] = run
+        m.submodules['depthwise_3x3_result'] = result
+        m.submodules['depthwise_3x3_configure'] = configure
+        m.submodules['depthwise_3x3_shift_right'] = shift_right
+        self.register_xetter(40, load)
+        self.register_xetter(41, run)
+        self.register_xetter(42, result)
+        self.register_xetter(43, configure)
+        self.register_xetter(44, shift_right)
+
     def _make_filter_value_getter(self, m, fvf_data):
         fvg_next = Signal()
         if is_pysim_run():
@@ -139,6 +199,7 @@ class Mnv2RegisterInstruction(RegisterFileInstruction):
         return fifo.w_data, fifo.w_en, oq_has_space
 
     def elab_xetters(self, m):
+        self._make_depthwise_3x3(m)
         # Simple registers
         input_depth_words, set_id = self._make_setter(
             m, 10, 'set_input_depth_words')

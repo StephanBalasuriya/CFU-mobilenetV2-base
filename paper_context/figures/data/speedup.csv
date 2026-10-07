@@ -1,0 +1,4 @@
+configuration,cycles,baseline,speedup,cycle_reduction_pct
+cfu_1x1,828991457,cfu_1x1,1.000,0.00
+cfu_1x1_3x3,615396021,cfu_1x1,1.347,25.77
+sliding_window,573258998,cfu_1x1,1.446,30.85
