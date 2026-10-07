@@ -68,11 +68,19 @@ static inline uint32_t cfu_dw3x3_configure(
   return cfu_op0(43, input_offset, weight_offset);
 }
 
+// Shift the internal 3x3 input window one column left and insert a new
+// right column: bits [7:0] = row 0, [15:8] = row 1, [23:16] = row 2.
+// Weights are unchanged.
+static inline uint32_t cfu_dw3x3_shift_right(uint32_t column) {
+  return cfu_op0(44, column, 0);
+}
+
 #define CFU_DW3X3_LOAD(in0, in1) cfu_dw3x3_load(in0, in1)
 #define CFU_DW3X3_RUN() cfu_dw3x3_run()
 #define CFU_DW3X3_GET_RESULT() cfu_dw3x3_get_result()
 #define CFU_DW3X3_CONFIGURE(input_offset, weight_offset) \
   cfu_dw3x3_configure(input_offset, weight_offset)
+#define CFU_DW3X3_SHIFT_RIGHT(column) cfu_dw3x3_shift_right(column)
 
 #define EBRAM_DEPTH_BITS (16 * 1024)
 #define EBRAM_DEPTH_BYTES (EBRAM_DEPTH_BITS / 8)

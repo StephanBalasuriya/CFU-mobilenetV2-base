@@ -162,3 +162,41 @@ class CfuTest(CfuTestBase):
             yield get_output(pack_vals(127, -55, 127, 67))
 
         return self.run_ops(make_op_stream(), False)
+
+    def test_depthwise_3x3_shift_right(self):
+        # LOAD x3 / RUN / GET_RESULT, then SHIFT_RIGHT / RUN / GET_RESULT
+        # through the real instruction interface (opcodes 40-44).
+        input_offset = 128
+        image = [
+            [-128, -100, 5, 127, -7, 60],
+            [3, -50, 99, -128, 22, -1],
+            [127, 0, -33, 44, -90, 18],
+        ]
+        weights = [7, -3, 127, -128, 2, 9, -11, 50, -64]
+
+        def window(x):
+            return [image[r][x + c] for r in range(3) for c in range(3)]
+
+        def expected(x):
+            return sum((i + input_offset) * w
+                       for i, w in zip(window(x), weights))
+
+        def op(funct7, in0=0, in1=0, out=None):
+            return ((0, funct7, in0, in1), out)
+
+        def make_op_stream():
+            yield op(43, input_offset, 0)
+            w = window(0)
+            yield op(40, pack_vals(*w[0:4]), pack_vals(*weights[0:4]))
+            yield op(40, pack_vals(*w[4:8]), pack_vals(*weights[4:8]))
+            yield op(40, pack_vals(w[8], 0, 0, 0),
+                     pack_vals(weights[8], 0, 0, 0))
+            yield op(41)
+            yield op(42, out=expected(0))
+            for x in range(1, len(image[0]) - 2):
+                column = [image[r][x + 2] for r in range(3)]
+                yield op(44, pack_vals(*column, 0))
+                yield op(41)
+                yield op(42, out=expected(x))
+
+        return self.run_ops(make_op_stream(), False)

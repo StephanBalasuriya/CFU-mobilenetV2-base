@@ -126,8 +126,16 @@ class Mnv2RegisterInstruction(RegisterFileInstruction):
         class RunXetter(Xetter):
             def elab(self, module):
                 module.d.comb += [
-                    self.done.eq(self.start),
                     dw.run.eq(self.start),
+                    self.done.eq(dw.done),
+                ]
+
+        class ShiftRightXetter(Xetter):
+            def elab(self, module):
+                module.d.comb += [
+                    self.done.eq(self.start),
+                    dw.shift.eq(self.start),
+                    dw.shift_column.eq(self.in0),
                 ]
 
         class ResultXetter(Xetter):
@@ -141,14 +149,17 @@ class Mnv2RegisterInstruction(RegisterFileInstruction):
         run = RunXetter()
         result = ResultXetter()
         configure = ConfigureXetter()
+        shift_right = ShiftRightXetter()
         m.submodules['depthwise_3x3_load'] = load
         m.submodules['depthwise_3x3_run'] = run
         m.submodules['depthwise_3x3_result'] = result
         m.submodules['depthwise_3x3_configure'] = configure
+        m.submodules['depthwise_3x3_shift_right'] = shift_right
         self.register_xetter(40, load)
         self.register_xetter(41, run)
         self.register_xetter(42, result)
         self.register_xetter(43, configure)
+        self.register_xetter(44, shift_right)
 
     def _make_filter_value_getter(self, m, fvf_data):
         fvg_next = Signal()
