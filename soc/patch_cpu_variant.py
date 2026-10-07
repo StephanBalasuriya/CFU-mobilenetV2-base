@@ -75,6 +75,7 @@ def patch_cpu_variant():
         #   If we don't have this workaround, we get a link error.
         'full+cfu':             '-march=rv32im -mabi=ilp32',
         'full+cfu+debug':       '-march=rv32im -mabi=ilp32',
+        'full':                 '-march=rv32im -mabi=ilp32',
     })
 
     ########### ADD code to existing add_soc_components() #######
