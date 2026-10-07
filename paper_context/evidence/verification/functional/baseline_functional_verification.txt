@@ -1,12 +1,15 @@
-# Baseline Functional Verification
+BASELINE FUNCTIONAL VERIFICATION
+================================
 
-## Purpose
+Purpose
+-------
 
 This document records the functional verification performed for the baseline 3x3 depthwise-convolution CFU implementation.
 
 The objective was to verify that the CFU produces functionally correct results and matches the software/reference implementation for the supported depthwise-convolution operations.
 
-## Verification Scope
+Verification Scope
+------------------
 
 The verification covered:
 
@@ -18,7 +21,8 @@ The verification covered:
 - Bias and quantization behavior.
 - Functional equivalence against the reference depthwise implementation and TFLM reference behavior.
 
-## Verification Method
+Verification Method
+-------------------
 
 Two levels of verification were performed:
 
@@ -27,26 +31,28 @@ Two levels of verification were performed:
 
 The tests included different depthwise-convolution configurations and parameter combinations rather than relying on a single fixed test case.
 
-## Gateware Verification
+Gateware Verification
+---------------------
 
-- **Tests passed:** 25 / 25
-- **Tests failed:** 0 / 25
+- Tests passed: 25 / 25
+- Tests failed: 0 / 25
 
 The gateware tests verified the basic hardware datapath and control behavior of the 3x3 depthwise CFU.
 
-## Host Functional-Equivalence Verification
+Host Functional-Equivalence Verification
+----------------------------------------
 
 A broader host-side verification compared the implementation against the existing/reference depthwise implementation.
 
-- **Cases tested:** 400 / 400
-- **Cases passed:** 400
-- **Cases failed:** 0
-- **Functional mismatches:** 0
+- Cases tested: 400 / 400
+- Cases passed: 400
+- Cases failed: 0
+- Functional mismatches: 0
 
 The tested cases included:
 
 - Random input shapes.
-- `SAME` and `VALID` padding.
+- SAME and VALID padding.
 - Stride 1 and stride 2.
 - Random input and weight offsets.
 - Bias handling.
@@ -55,15 +61,17 @@ The tested cases included:
 
 The outputs were byte-identical for all tested cases.
 
-## TFLM Reference Equivalence
+TFLM Reference Equivalence
+--------------------------
 
 The implementation was also checked against TensorFlow Lite Micro (TFLM) reference behavior. The tested depthwise-convolution results matched the expected reference output.
 
-## MobileNetV2 Functional Check
+MobileNetV2 Functional Check
+----------------------------
 
 The 3x3 depthwise CFU was exercised as part of the INT8 MobileNetV2 inference flow.
 
-**Model:** `mobilenetv2_a035_224_int8.tflite`
+Model: mobilenetv2_a035_224_int8.tflite
 
 Configuration:
 
@@ -75,10 +83,11 @@ Configuration:
 
 The inference completed successfully with:
 
-- **Top-1 class index:** 64
-- **Top-1 score:** 0.406250
+- Top-1 class index: 64
+- Top-1 score: 0.406250
 
-## Conclusion
+Conclusion
+----------
 
 The baseline 3x3 depthwise CFU passed both gateware-level and host-level functional verification.
 
@@ -86,13 +95,14 @@ The results establish that the CFU datapath is functionally correct for the test
 
 This verification serves as the functional baseline before evaluating the sliding-window/data-reuse optimization.
 
-## Verification Summary
+Verification Summary
+--------------------
 
-| Verification Item | Result |
-|---|---:|
-| Gateware unit tests | 25 / 25 passed |
-| Host functional-equivalence tests | 400 / 400 passed |
-| Functional mismatches | 0 |
-| MobileNetV2 inference | Passed |
-| MobileNetV2 Top-1 class | 64 |
-| MobileNetV2 Top-1 score | 0.406250 |
+  Verification Item                   Result
+  ---------------------------------   ----------------
+  Gateware unit tests                 25 / 25 passed
+  Host functional-equivalence tests   400 / 400 passed
+  Functional mismatches               0
+  MobileNetV2 inference               Passed
+  MobileNetV2 Top-1 class             64
+  MobileNetV2 Top-1 score             0.406250
