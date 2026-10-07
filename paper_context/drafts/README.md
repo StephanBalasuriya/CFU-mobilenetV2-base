@@ -1,28 +1,19 @@
 # Drafts
 
-ONE paper, no per-section drafts.
-
-| File | Role |
-|---|---|
-| `MCSoC2026_MaxMarvels_Paper_Draft.docx` | **Authoritative paper** (copy of the official IEEE template, two-column) |
-| `MCSoC2026_MaxMarvels_Paper_Draft.pdf` | Current rendering, for visual/page-layout inspection |
-| `scripts/build_docx.py` | Generator: holds the paper text (`CONTENT`) and inserts it into a copy of `../conference/conference-template-letter.docx` (the template itself is never modified) |
-| `README_DRAFT_NOTES.md` | Evidence tags [E1]–[E3], citation/claim audit, open literature gaps |
-| `DOCUMENT_LAYOUT_CHECK.md` | Layout verification of the generated DOCX |
-
-Rebuild and render:
+The paper is a Word document built on `../conference/conference-template-letter.docx`
+(Strict OOXML: Word and LibreOffice open it, pandoc cannot). Edit the
+newest `MCSoC2026_MaxMarvels_Paper_Draft_v*.docx` directly and keep a PDF
+rendering next to it for page-layout checks:
 
 ```
-python3 paper_context/drafts/scripts/build_docx.py
 soffice --headless --convert-to pdf --outdir paper_context/drafts \
-    paper_context/drafts/MCSoC2026_MaxMarvels_Paper_Draft.docx
+    paper_context/drafts/MCSoC2026_MaxMarvels_Paper_Draft_vN.docx
 ```
 
-Rules: prose must use only facts from `../EXPERIMENTAL_RESULTS.md`
-(verified section), `../ARCHITECTURE_NOTES.md` and references in
-`../LITERATURE_INDEX.md`. Do not keep page-preview PNGs here; the PDF is
-the inspection copy. Research figures belong in `../figures/`.
+| Version | Content |
+|---|---|
+| v5 | Revised Introduction and Background/Related Work (explicit research gap, Sec. II-D) on top of the long v2 Sections III–V |
 
-Note: once the team starts editing the DOCX directly in Word, the generator
-must no longer be re-run (it would overwrite manual edits). Decide this
-switch explicitly.
+Rules: prose uses only facts from `../EXPERIMENTAL_RESULTS.md` (verified
+section), `../ARCHITECTURE_NOTES.md` and references tracked in
+`../LITERATURE_INDEX.md`. Research figures belong in `../figures/`.

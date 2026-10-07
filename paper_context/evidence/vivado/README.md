@@ -1,14 +1,8 @@
 # Vivado Evidence
 
 Synthesis, implementation, utilization, timing and FPGA reports for the
-merged 1×1 + 3×3 + sliding-window CFU SoC (target board: Digilent Arty, per
-`soc/build/digilent_arty.*`).
-
-| Subdirectory | Expected files |
-|---|---|
-| `synthesis/` | Post-synthesis utilization (`report_utilization`, incl. `-hierarchical` for the CFU instance) |
-| `implementation/` | Post-route utilization (top level and CFU hierarchy), DRC |
-| `timing/` | `report_timing_summary` (WNS, TNS, failing endpoints), target clock, Fmax derivation |
+1×1, 1×1 + 3×3 and 1×1 + 3×3 + sliding-window CFU SoCs (target board:
+Digilent Nexys4 DDR, `xc7a100tcsg324-1`).
 
 ## Current evidence (commit `1397800`)
 
@@ -22,8 +16,7 @@ Reports are stored per configuration (not per stage):
 
 Vivado v.2024.1, `xc7a100tcsg324-1` (Nexys4 DDR), system clock 75 MHz.
 Utilization = post-place; timing = post-route. Parsed values:
-`../tables/fpga_resources.md`. The `synthesis/`, `implementation/` and
-`timing/` folders are unused.
+`../tables/fpga_resources.md`.
 
 Earlier quoted figures (WNS +0.243 ns; LUT 6192 / FF 4504; CFU 1514 /
 1081) are not in any report and are historical (see
