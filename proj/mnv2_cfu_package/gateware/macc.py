@@ -37,6 +37,19 @@ class Depthwise3x3Mac(SimpleElaboratable):
         Stage 3: final sum
 
     The DONE signal is asserted only when the final result is ready.
+
+    Sliding window (stride-1 horizontal reuse):
+        LOAD also records the offset-applied input and weight values
+        in input_window / weight_window (row-major, index = y*3 + x).
+
+        SHIFT_RIGHT shifts every input row left by one and inserts
+        shift_column bytes [7:0], [15:8], [23:16] as the new right
+        column of rows 0, 1, 2. Weights are unchanged. SHIFT_RIGHT
+        only updates registers and marks the products stale.
+
+        If products are stale, RUN spends one extra cycle recomputing
+        all nine products from the window registers before entering
+        the unchanged 3-stage accumulation.
     """
 
     def __init__(self):
@@ -50,8 +63,21 @@ class Depthwise3x3Mac(SimpleElaboratable):
         self.input_offset = Signal(signed(9))
         self.weight_offset = Signal(signed(9))
 
+        self.shift = Signal()
+        self.shift_column = Signal(32)
+
         self.run = Signal()
         self.result = Signal(signed(32))
+
+        # Offset-applied window values, row-major (index = y*3 + x).
+        self.input_window = [
+            Signal(signed(10), name=f"dw_input_window_{n}")
+            for n in range(9)
+        ]
+        self.weight_window = [
+            Signal(signed(10), name=f"dw_weight_window_{n}")
+            for n in range(9)
+        ]
 
         # Asserted when a RUN operation has completed.
         self.done = Signal()
@@ -104,7 +130,14 @@ class Depthwise3x3Mac(SimpleElaboratable):
         # 1 = stage 1 completed
         # 2 = stage 2 completed
         # 3 = final result completed / done
-        pipeline_state = Signal(range(4))
+        # 4 = products refreshed from window (only after SHIFT_RIGHT)
+        pipeline_state = Signal(range(5))
+
+        # Set by SHIFT_RIGHT: product_regs no longer match the window.
+        products_stale = Signal()
+
+        input_window = self.input_window
+        weight_window = self.weight_window
 
         m.d.comb += [
             self.result.eq(result),
@@ -136,6 +169,8 @@ class Depthwise3x3Mac(SimpleElaboratable):
             weight_bytes = list(all_words(self.load_weight, 8))
 
             load_products = []
+            load_inputs = []
+            load_weights = []
 
             for byte_index in range(4):
 
@@ -171,6 +206,8 @@ class Depthwise3x3Mac(SimpleElaboratable):
                 ]
 
                 load_products.append(product)
+                load_inputs.append(input_value)
+                load_weights.append(weight_value)
 
             with m.Switch(load_index):
 
@@ -181,6 +218,14 @@ class Depthwise3x3Mac(SimpleElaboratable):
                         product_regs[2].eq(load_products[2]),
                         product_regs[3].eq(load_products[3]),
                     ]
+                    m.d.sync += [
+                        input_window[n].eq(load_inputs[n])
+                        for n in range(4)
+                    ]
+                    m.d.sync += [
+                        weight_window[n].eq(load_weights[n])
+                        for n in range(4)
+                    ]
 
                 with m.Case(1):
                     m.d.sync += [
@@ -189,10 +234,22 @@ class Depthwise3x3Mac(SimpleElaboratable):
                         product_regs[6].eq(load_products[2]),
                         product_regs[7].eq(load_products[3]),
                     ]
+                    m.d.sync += [
+                        input_window[4 + n].eq(load_inputs[n])
+                        for n in range(4)
+                    ]
+                    m.d.sync += [
+                        weight_window[4 + n].eq(load_weights[n])
+                        for n in range(4)
+                    ]
 
                 with m.Case(2):
                     m.d.sync += [
                         product_regs[8].eq(load_products[0]),
+                        input_window[8].eq(load_inputs[0]),
+                        weight_window[8].eq(load_weights[0]),
+                        # All nine products now match the window.
+                        products_stale.eq(0),
                     ]
 
             m.d.sync += load_index.eq(
@@ -204,18 +261,60 @@ class Depthwise3x3Mac(SimpleElaboratable):
             )
 
         # ------------------------------------------------------------
+        # SHIFT_RIGHT
+        #
+        # Registers only: each row moves left by one and the new
+        # column (plus input offset) enters on the right. Weights
+        # are unchanged. Products are recomputed at the next RUN.
+        # ------------------------------------------------------------
+
+        with m.Elif(self.shift):
+
+            column_bytes = list(all_words(self.shift_column, 8))
+
+            for row in range(3):
+                base = row * 3
+                m.d.sync += [
+                    input_window[base + 0].eq(input_window[base + 1]),
+                    input_window[base + 1].eq(input_window[base + 2]),
+                    input_window[base + 2].eq(
+                        column_bytes[row].as_signed() + input_offset
+                    ),
+                ]
+
+            m.d.sync += products_stale.eq(1)
+
+        # ------------------------------------------------------------
         # PIPELINED ACCUMULATION
         # ------------------------------------------------------------
 
         with m.Else():
 
             # --------------------------------------------------------
-            # Start pipeline
+            # Refresh products after SHIFT_RIGHT (one extra cycle)
             # --------------------------------------------------------
 
             with m.If(
                 (pipeline_state == 0) &
-                self.run
+                self.run &
+                products_stale
+            ):
+                m.d.sync += [
+                    product_regs[n].eq(input_window[n] * weight_window[n])
+                    for n in range(9)
+                ]
+                m.d.sync += [
+                    products_stale.eq(0),
+                    pipeline_state.eq(4),
+                ]
+
+            # --------------------------------------------------------
+            # Start pipeline
+            # --------------------------------------------------------
+
+            with m.Elif(
+                ((pipeline_state == 0) & self.run) |
+                (pipeline_state == 4)
             ):
                 m.d.sync += [
                     # Stage 1

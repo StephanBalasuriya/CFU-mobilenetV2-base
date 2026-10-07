@@ -12,6 +12,12 @@ DEFINES += NDEBUG
 # Enable the MobileNetV2 CFU path.
 DEFINES += ACCEL_CONV
 
+# Opt-in 3x3 depthwise CFU instruction counters and per-layer output
+# checksums (make DW3X3_VERIFY=1 ...). Not for cycle measurements.
+ifeq '$(DW3X3_VERIFY)' '1'
+DEFINES += DW3X3_VERIFY
+endif
+
 # Keep the model and application isolated from upstream mnv2_first.
 export MNv2_BASELINE := 1
 

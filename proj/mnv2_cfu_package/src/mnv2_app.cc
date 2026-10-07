@@ -484,6 +484,16 @@ static void print_top_outputs() {
   printf("\n");
 
   printf(
+      "Output FNV1a      : 0x%08lx\n",
+      static_cast<unsigned long>(
+          fnv1a(
+              reinterpret_cast<const unsigned char*>(output),
+              output_count * sizeof(float)
+          )
+      )
+  );
+
+  printf(
       "Top-1 class index : %d\n",
       best_index
   );
