@@ -7,13 +7,20 @@
 // uint32_t dsc_cfu_stub(int f7, uint32_t a, uint32_t b).
 #ifdef DSC_CFU_STUB
   extern uint32_t dsc_cfu_stub(int f7, uint32_t a, uint32_t b);
-  #define DSC_CFU(f7, a, b) dsc_cfu_stub((f7), (uint32_t)(a), (uint32_t)(b))
+  #define DSC_CFU(f7, a, b) dsc_cfu_stub((fgi7), (uint32_t)(a), (uint32_t)(b))
 #else
   #include "cfu.h"
   #define DSC_CFU(f7, a, b) ((uint32_t)cfu_op0((f7), (uint32_t)(a), (uint32_t)(b)))
 #endif
 
-enum { F_PING = 0, F_CFG = 1, F_MEMW = 2, F_START = 3, F_STATUS = 4, F_OUTRD = 5, F_WAIT = 6, F_CYCLES = 7 };
+#define F_PING 0
+#define F_CFG 1
+#define F_MEMW 2
+#define F_START 3
+#define F_STATUS 4
+#define F_OUTRD 5
+#define F_WAIT 6
+#define F_CYCLES 7
 enum { MEM_EXW = 0, MEM_EXB = 1, MEM_EXM = 2, MEM_EXS = 3, MEM_DWW = 4 /*..12*/,
        MEM_DWB = 13, MEM_DWM = 14, MEM_DWS = 15, MEM_PRW = 16, MEM_PRB = 17, MEM_PRM = 18,
        MEM_PRS = 19, MEM_IFM = 20 };
