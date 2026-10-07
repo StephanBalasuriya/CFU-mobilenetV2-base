@@ -17,8 +17,10 @@ Test sources: `proj/mnv2_cfu_package/gateware/test_depthwise_macc.py`,
 `test_mnv2_cfu.py` (incl. `test_depthwise_3x3_shift_right`), and the 1×1
 sub-block tests.
 
-Functional equivalence: nothing yet. The previously quoted host
-functional-equivalence result (400/400) has no test source or log in the
-repository. The repository provides the instrumentation to produce it:
+Functional equivalence: `functional/baseline_functional_verification.md`
+is a written summary reporting 400/400 host equivalence tests (0
+mismatches) for the baseline 3×3 CFU and Top-1 class 64 / 0.406250. No
+test source or raw log is in the repository. See
+`../tables/correctness_results.md`. The repository provides the instrumentation to produce it:
 `Output FNV1a` in `src/mnv2_app.cc` and per-layer checksums under
 `make DW3X3_VERIFY=1`.

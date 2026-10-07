@@ -16,21 +16,17 @@ output, Top-1 result and `Output FNV1a`. Instruction-count runs
 (`make DW3X3_VERIFY=1`) are stored separately from timing runs, because
 the counters change the cycle count.
 
-## Existing evidence in the repository (2026-10-07)
+## Current evidence (commit `1397800`)
 
-No raw runtime logs are committed. Repository-documented values (text only,
-Renode/Verilator simulation):
+| Directory | Log | Cycles |
+|---|---|---:|
+| `cpu_only/` | **missing** | [REQUIRED] |
+| `cfu_1x1/` | `output.md` | 828,991,457 |
+| `cfu_1x1_3x3/` | `output.md` | 615,396,021 |
+| `sliding_window/` | `output.md` | 573,258,998 |
 
-| Value | Source |
-|---|---|
-| CPU-only 1,216,227,740 cycles | `proj/mnv2_baseline/README_MNV2_CPU_BASELINE.md` |
-| 1×1 CFU 448,959,843 cycles | `proj/mnv2_cfu_package/README_MNV2_EXISTING_CFU.md` |
-
-Sliding-window instruction counts (LOAD 2,529,552 → 726,864; SHIFT 600,896;
-RUN/GET 843,184; CONFIGURE 17) are reproducible analytically from
-`proj/mnv2_cfu_package/src/tensorflow/lite/micro/kernels/depthwise_conv.cc`
-(`Dw3x3VerifyReport`) but have no measured log yet. See
-`../../EXPERIMENTAL_RESULTS.md`.
-
-`proj/mnv2_baseline/baseline_build.log` is **not** runtime evidence: it is a
-build log from another machine ending in a link failure.
+Configuration identification and open metadata questions:
+`../CONFIGURATION_MAP.md`. Parsed tables: `../tables/`. The old
+Renode/Verilator README values (1,216,227,740 / 448,959,843) are historical
+and must not be mixed with these logs. `proj/mnv2_baseline/baseline_build.log`
+is not runtime evidence (failed link).

@@ -37,9 +37,10 @@ Based only on the synchronized repository (`proj/mnv2_cfu_package`):
 - **Sliding-window data reuse:** stride-1 horizontal reuse via a
   `SHIFT_RIGHT` instruction that inserts one new input column.
 - **End-to-end evaluation:** whole-model cycle counts via the TFLM
-  profiler. The cycle counts recorded in the repository so far come from
-  Renode/Verilator simulation, not physical FPGA runs (see
-  `EXPERIMENTAL_RESULTS.md`).
+  profiler for the 1×1, 1×1+3×3 and sliding-window configurations, plus
+  Vivado reports for a Nexys4 DDR (xc7a100t) SoC at 75 MHz (see
+  `EXPERIMENTAL_RESULTS.md`). The runtime logs do not state whether they
+  ran on the board or in simulation, and the CPU-only log is still missing.
 
 ## Central paper story
 

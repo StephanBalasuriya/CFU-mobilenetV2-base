@@ -10,18 +10,22 @@ merged 1×1 + 3×3 + sliding-window CFU SoC (target board: Digilent Arty, per
 | `implementation/` | Post-route utilization (top level and CFU hierarchy), DRC |
 | `timing/` | `report_timing_summary` (WNS, TNS, failing endpoints), target clock, Fmax derivation |
 
-## Existing evidence in the repository (2026-10-07)
+## Current evidence (commit `1397800`)
 
-None. No `.rpt`, `.dcp`, `.bit` or Vivado log exists in the repository.
-`soc/build/digilent_arty.mnv2_cfu_package/gateware/` is empty (no gateware
-build has been run in this checkout).
+Reports are stored per configuration (not per stage):
 
-The figures previously quoted for the team (WNS +0.243 ns; top level LUT
-6192 / FF 4504 / RAMB36 15 / RAMB18 33 / DSP 8; CFU LUT 1514 / FF 1081 /
-RAMB36 4 / RAMB18 8 / DSP 4) have no report here and remain unverified.
+| Directory | Configuration | Reports |
+|---|---|---|
+| `cfu_1x1/` | B. 1×1 CFU | utilization hierarchical (synth, place), timing (synth, post-route), clock utilization, power (routed) |
+| `cfu_1x1_3x3/` | C. 1×1 + 3×3 DW CFU | same set, no power |
+| `sliding_window/` | D. + sliding window | same set, no power |
 
-Note: the local `proj/mnv2_cfu_package/cfu.v` (git-ignored, dated
-2026-10-03) predates the sliding-window merge. Regenerate it before
-synthesis so reports match the current code. Vivado project outputs
-(`*.runs/`, `*.cache/`, `*.gen/`, `*.hw/`, `*.ip_user_files/`) must not be
-copied here; copy only the `.rpt` files.
+Vivado v.2024.1, `xc7a100tcsg324-1` (Nexys4 DDR), system clock 75 MHz.
+Utilization = post-place; timing = post-route. Parsed values:
+`../tables/fpga_resources.md`. The `synthesis/`, `implementation/` and
+`timing/` folders are unused.
+
+Earlier quoted figures (WNS +0.243 ns; LUT 6192 / FF 4504; CFU 1514 /
+1081) are not in any report and are historical (see
+`../RESULTS_AUDIT.md`). Vivado project outputs (`*.runs/`, `*.cache/`,
+…) must not be copied here, only `.rpt` files.
