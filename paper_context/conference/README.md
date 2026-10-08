@@ -1,19 +1,11 @@
 # Conference Material — MCSoC 2026
 
-This directory will contain the official conference documents:
+| File | Content |
+|---|---|
+| `R2-MCSOC2026_CFP.pdf` | Second-round call for papers |
+| `conference-template-letter.docx` | IEEE two-column template (US Letter); the paper drafts are built on it |
 
-- MCSoC 2026 call for papers (CFP),
-- official paper template,
-- submission requirements,
-- formatting information.
-
-No details (page limit, deadlines, template, citation style) are recorded
-here until the official documents are added. Do not rely on assumptions.
-
-## Checklist
-
-- [ ] CFP
-- [ ] Official template
-- [ ] Submission requirements
-- [ ] Page limit
-- [ ] Citation/formatting requirements
+From the CFP: submission via EDAS (https://edas.info/N34632); second-round
+deadline **October 10, 2026 (hard)**; notification October 31, 2026. The CFP
+states no page limit. The 4-page target comes from the team brief; confirm
+it on EDAS before submission.

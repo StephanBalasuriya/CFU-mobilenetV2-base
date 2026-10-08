@@ -7,8 +7,7 @@ four-page short paper. It collects the verified project facts, results
 ledger, architecture notes, source index, literature tracking and
 conference material that every drafting session must start from.
 
-No paper prose lives here except under `drafts/`, and drafting has not
-started yet.
+Paper prose lives only in the Word drafts under `drafts/`.
 
 ## Current Git state
 
@@ -92,7 +91,9 @@ These are planned figures only; none have been made yet.
 | `ARCHITECTURE_NOTES.md` | Source-derived architecture description |
 | `SOURCE_INDEX.md` | Which repository files are authoritative |
 | `LITERATURE_INDEX.md` | Reference tracking list |
-| `conference/` | CFP, template, submission rules |
+| `PAPER_CLAIMS.md` | Claims we may / may not make |
+| `conference/` | CFP and IEEE template |
 | `literature/` | Reference PDFs |
-| `project/` | Project-specific evidence (logs, reports) |
-| `drafts/` | Section-by-section drafts |
+| `evidence/` | Runtime logs, Vivado reports, verification logs and parsed tables |
+| `figures/` | Result graphs (generated from `evidence/`) and diagram specs |
+| `drafts/` | The paper (Word) and its PDF rendering |

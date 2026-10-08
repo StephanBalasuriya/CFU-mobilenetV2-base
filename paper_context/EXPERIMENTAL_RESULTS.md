@@ -75,7 +75,7 @@ Source: `evidence/tables/correctness_results.md`.
 
 - Gateware tests: 25/25 (raw log).
 - Host functional equivalence: 400/400 **reported** in
-  `evidence/verification/functional/baseline_functional_verification.md`
+  `evidence/verification/functional/baseline_functional_verification.txt`
   (summary only, no test source/log).
 - Top-1 class 64 (`green_mamba`), score 0.406250, identical in B, C, D.
   Input FNV-1a `0xbe3b0c0b` in all. Output FNV-1a `0x2d8f8f61` (D only).

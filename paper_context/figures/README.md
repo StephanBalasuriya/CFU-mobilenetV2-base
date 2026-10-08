@@ -5,7 +5,7 @@ Final paper diagrams and graphs. Planned figures are listed in
 
 | Subdirectory | Contents |
 |---|---|
-| `architecture/` | System-level architecture figures (TFLM → VexRiscv → CFU → FPGA) |
+| `architecture/` | System-level architecture figures (TFLM → VexRiscv → CFU → FPGA); none yet |
 | `diagrams/` | Technical diagrams: 3×3 depthwise datapath, sliding-window reuse, MobileNetV2 operator mapping / CFU coverage |
 | `graphs/` | Measured performance, resource and instruction-count graphs |
 

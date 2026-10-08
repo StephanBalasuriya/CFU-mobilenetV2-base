@@ -101,3 +101,10 @@ third_party/yosys
 
 # Environment
 env
+
+# Vivado project outputs
+*.runs/
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/

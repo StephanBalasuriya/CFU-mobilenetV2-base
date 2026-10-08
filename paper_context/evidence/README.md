@@ -10,7 +10,6 @@ repository path is referenced here) and it is entered in
 | `vivado/` | Synthesis, implementation, utilization, timing and FPGA reports |
 | `runtime/` | MobileNetV2 execution logs and measured cycle/instruction counts |
 | `verification/` | Gateware and functional-equivalence test evidence |
-| `logs/` | Raw or summarized experimental logs (current / historical / superseded) |
 
 Rules:
 
