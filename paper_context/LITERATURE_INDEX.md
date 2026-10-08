@@ -9,7 +9,7 @@ source (publisher page, DOI record). PDFs go in `literature/`.
 | 1 | CFU Playground / Prakash et al. | USED [4] | `literature/CFU Playground.pdf` | arXiv:2201.01863v3, 2023 (check for published version) | Closest system; 55× op / 3× model; DW access-pattern remark |
 | 2 | CFU Playground / DATE 2023 | NOT USED ([4] covers the CFU interface) | `literature/CFU Playground_Want A ML Processor.pdf` | DATE 2023 | CFU interface (2 operands, 1 result) |
 | 3 | Yildirim & Ozturk 2025 | USED [8] | `literature/RISCV_BasedTinyML_Accelerator_…pdf` | arXiv:2511.21232, 2025 | Fused DSC CFU, 16,484 LUT / 173 DSP, NLR depthwise |
-| 4 | Véstias et al. | USED [9] (metadata incomplete) | `literature/DSP Block.pdf` | **Venue/year not in PDF** | Mixed DSP/LUT MACs |
+| 4 | Véstias et al. | USED [9] | `literature/DSP Block.pdf` | FPL 2017, Ghent (DOI 10.23919/FPL.2017.8056863) | Mixed DSP/LUT MACs |
 | 5 | Li et al. 2022 | USED [6] | `literature/A_digital_signal_processor-efficient_accelerator_f.pdf` | Electron. Lett. 58(7):271–273, 2022, doi:10.1049/ell2.12435 | DWC reuse limits, DSP packing, 392 DSPs |
 | 6 | Sabih et al. 2024 | USED [7] | `literature/Hardware Software CoDesign of RISCV Extensions…pdf` | FPT 2024 | Sparse CFU extensions |
 | 7 | MobileNetV2 | USED [2] (secondary) | **PDF missing** | Sandler et al., CVPR 2018 (from refs of [6], [7]) | Workload |
@@ -55,7 +55,7 @@ Status values: NOT ADDED → ADDED (PDF in `literature/`) → VERIFIED
 ## Open literature/metadata items
 
 1. Add the MobileNetV2 [2] and TFLM [3] PDFs to `literature/`.
-2. Véstias et al. [9]: venue and year are not in the PDF (PDF created 2017).
-   Find the published version or drop [9].
+2. Véstias et al. [9]: resolved. Published at FPL 2017, Ghent
+   (DOI 10.23919/FPL.2017.8056863, per dblp / IPL repository); v6 updated.
 3. CFU Playground [4] is cited as arXiv v3 (2023); check for a
    peer-reviewed version. [5] and [8] are arXiv preprints.

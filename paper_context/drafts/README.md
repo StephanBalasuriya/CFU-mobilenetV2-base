@@ -13,10 +13,11 @@ soffice --headless --convert-to pdf --outdir paper_context/drafts \
 | Version | Content |
 |---|---|
 | v5 | Revised Introduction and Background/Related Work (explicit research gap, Sec. II-D) on top of the long v2 Sections III–V |
+| v4 | Kasunya's condensed draft (`kasunya_3x3_cfu` @ `a1600a2`), source of v6 Sections III–V |
 | v6 | **Current.** v5 Introduction and Background + Kasunya's condensed Sections III–V (`kasunya_3x3_cfu` @ `a1600a2`), with abstract, limitations, conclusion and reconciled references. 4 pages |
 
-Open items in v6: figures 1–3 (boxes reserve the space), the cycle-count
-platform in Table II (board or simulation), and the venue/year of [9].
+Open items in v6: figures 1–3 (boxes reserve the space) and the cycle-count
+platform in Table II (board or simulation).
 
 Rules: prose uses only facts from `../EXPERIMENTAL_RESULTS.md` (verified
 section), `../ARCHITECTURE_NOTES.md` and references tracked in
