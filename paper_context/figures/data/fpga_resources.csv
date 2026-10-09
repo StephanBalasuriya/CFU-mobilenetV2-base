@@ -1,0 +1,4 @@
+configuration,level,lut,ff,ramb36,ramb18,dsp,dw3x3_lut,dw3x3_ff,wns_ns,fmax_est_mhz
+cfu_1x1,cfu,1511,1081,4,8,4,0,0,0.962,80.8
+cfu_1x1_3x3,cfu,1678,1475,4,8,4,198,394,0.372,77.2
+sliding_window,cfu,2693,1657,4,8,4,1136,576,0.322,76.9

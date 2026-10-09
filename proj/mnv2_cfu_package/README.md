@@ -15,15 +15,17 @@ CFU-Playground `mnv2_first` project.
 
 ## What is accelerated?
 
-The upstream CFU accelerates the eligible **1x1 CONV_2D** operations.
+The package preserves the existing eligible **1x1 CONV_2D** accelerator and
+adds a dedicated **3x3 INT8 DEPTHWISE_CONV_2D** datapath.
 The upstream kernel checks the convolution parameters and dispatches eligible
 MobileNetV2 1x1 convolutions to `Mnv2ConvPerChannel1x1()` when `ACCEL_CONV`
 is defined.
 
-This is NOT yet the 5x5 depthwise CFU from your research proposal. It is the
-correct next experimental version: the same model and image as the CPU
-baseline, but with the existing CFU-Playground MobileNetV2 accelerator
-enabled.
+The depthwise path is selected only for INT8 input and weights, a 3x3 filter,
+depth multiplier 1, unit dilation, and stride 1 or 2. Interior windows are
+packed into three input/weight word pairs and processed with one 9-MAC CFU
+operation. Padding and unsupported quantization cases use the original
+reference implementation.
 
 ## Install inside your existing CFU-Playground checkout
 
@@ -79,7 +81,7 @@ and launch Renode.
 Run exactly the same image/model on:
 
     mnv2_baseline  -> CPU-only
-    mnv2_cfu       -> existing 1x1 CFU
+    mnv2_cfu       -> existing 1x1 CFU + 3x3 depthwise CFU
 
 Record:
 
@@ -91,7 +93,24 @@ and calculate:
     speedup = baseline_cycles / cfu_cycles
 
 The profiler output still gives the per-operator cycle counts, so you can
-identify which CONV_2D operations benefit from the accelerator.
+identify which CONV_2D and DEPTHWISE_CONV_2D operations benefit from the
+accelerator. The application input, model, quantization, and output
+interpretation are unchanged.
+
+## CFU generation and measurements
+
+From the repository root, with the normal CFU-Playground environment active:
+
+``` bash
+make -C proj/mnv2_cfu_package generate_cfu
+make -C proj/mnv2_cfu_package clean
+make -C proj/mnv2_cfu_package renode
+make -C proj/mnv2_cfu_package run-renode
+```
+
+Record total cycles and the operator profiler's
+`DEPTHWISE_CONV_2D`/`CONV_2D` ticks from `build/software.log`. The expected
+functional check remains the known class-64 result (approximately 0.406250).
 
 ## Important
 

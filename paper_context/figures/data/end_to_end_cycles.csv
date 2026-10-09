@@ -1,0 +1,4 @@
+configuration,cycles,dw_cycles_est,conv2d_cycles_est,other_cycles_est,source
+cfu_1x1,828991457,583133184,179781632,66076641,paper_context/evidence/runtime/cfu_1x1/output.md
+cfu_1x1_3x3,615396021,369477632,180081664,65836725,paper_context/evidence/runtime/cfu_1x1_3x3/output.md
+sliding_window,573258998,316961792,179941376,76355830,paper_context/evidence/runtime/sliding_window/output.md

@@ -21,6 +21,8 @@ proj/
     ├── cfu.v
     ├── gateware/
     │   ├── mnv2_cfu.py
+    │   ├── macc.py
+    │   ├── test_depthwise_macc.py
     │   └── test_mnv2_cfu.py
     ├── model/
     │   └── mobilenetv2_a035_224_int8.tflite
@@ -42,7 +44,9 @@ proj/
     │                       └── integer_ops/
     │                           ├── conv.cc
     │                           ├── mnv2_conv.cc
-    │                           └── mnv2_conv.h
+    │                           ├── mnv2_conv.h
+    │                           └── mnv2_depthwise_conv.h
+    │               └── micro/kernels/depthwise_conv.cc
     └── tools/
         └── image_to_header.py
 ```
@@ -117,6 +121,18 @@ convolution satisfies the existing accelerator's requirements. Eligible
 1x1 convolutions are dispatched to `Mnv2ConvPerChannel1x1()`; other
 operations remain on the CPU.
 
+### `src/tensorflow/lite/micro/kernels/depthwise_conv.cc`
+
+Preserves the upstream depthwise kernel for all unsupported cases and
+dispatches eligible INT8 3x3 depthwise operations to the explicit-window
+helper.
+
+### `src/tensorflow/lite/kernels/internal/reference/integer_ops/mnv2_depthwise_conv.h`
+
+Packs each full 3x3 input/filter window into three word pairs, invokes the
+dedicated CFU operation, and applies the existing TFLM bias, multiplier,
+shift, output offset, and activation clamp semantics.
+
 ### `src/tensorflow/lite/kernels/internal/reference/integer_ops/mnv2_conv.h`
 
 Declares `Mnv2ConvPerChannel1x1()`.
@@ -187,7 +203,7 @@ CFU-Playground build system
    |
    +--> TFLite Micro software
    |
-   +--> Accelerated conv.cc
+   +--> Accelerated conv.cc and depthwise_conv.cc
    |
    +--> mnv2_conv.cc
    |
@@ -200,15 +216,11 @@ Renode
    |
    v
 MobileNetV2 inference
+   +--> Eligible 1x1 CONV_2D -> Mnv2ConvPerChannel1x1()
+   |                          -> existing MobileNetV2 CFU
    |
-   v
-Eligible 1x1 CONV_2D
-   |
-   v
-Mnv2ConvPerChannel1x1()
-   |
-   v
-Existing MobileNetV2 CFU
+   +--> Eligible 3x3 DEPTHWISE_CONV_2D
+                              -> three packed loads + 9-MAC CFU
 ```
 
 Non-eligible operations continue through the CPU implementation.
@@ -256,7 +268,8 @@ Therefore:
 
 ``` text
 1x1 CONV_2D        -> Existing CFU
-DEPTHWISE_CONV_2D -> CPU/reference implementation
+eligible 3x3 depthwise -> Dedicated depthwise CFU
+other depthwise     -> CPU/reference implementation
 Other operations   -> CPU/reference implementation
 ```
 
