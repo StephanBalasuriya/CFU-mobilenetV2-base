@@ -7,6 +7,7 @@
 
 #include "cat_image.h"
 #include "fused_dsc.h"
+#include "imagenet_labels.h"
 #include "models/mnv2/mobilenetv3_small_full_int8.h"
 #include "tflite.h"
 
@@ -64,6 +65,28 @@ static void print_top_outputs() {
   printf("  Mean = %ld x 10^-6\n", sum / kClasses);
   printf("\nTop-1 class index : %d\n", best);
   printf("Top-1 score       : %ld x 10^-6\n", scaled(q[best]));
+  printf("Top-1 class name  : %s\n", kImagenetLabels[best]);
+
+  // top-5 (largest q first, lowest index first among equal scores) and how many classes share the top score
+  int top[5]; int used[5]; int ties = 0;
+  for (int k = 0; k < 5; ++k) {
+    int b = -1;
+    for (int i = 0; i < kClasses; ++i) {
+      bool taken = false;
+      for (int j = 0; j < k; ++j) if (used[j] == i) taken = true;
+      if (taken) continue;
+      if (b < 0 || q[i] > q[b]) b = i;
+    }
+    used[k] = b; top[k] = b;
+  }
+  for (int i = 0; i < kClasses; ++i) if (q[i] == q[best]) ++ties;
+  printf("\nTop-5 classes:\n");
+  for (int k = 0; k < 5; ++k)
+    printf("  #%d  %4d  %-26s %ld x 10^-6\n", k + 1, top[k], kImagenetLabels[top[k]], scaled(q[top[k]]));
+  if (ties > 1)
+    printf("\nNOTE: %d classes share the top score. The int8 output cannot separate them (the model's logits are\n"
+           "      clipped: calibration range too small). The first of them is reported as Top-1.\n"
+           "      See tools/check_int8_model.py, tools/fix_logits_range.py, tools/quantize_mobilenetv3_keras.py.\n", ties);
   printf("\nFirst 20 outputs:\n");
   for (int i = 0; i < 20; ++i) printf("  output[%d] = %ld x 10^-6\n", i, scaled(q[i]));
 }
@@ -73,7 +96,7 @@ void mnv3_run(void) {
   printf(" MobileNetV3-small (full) INT8\n");
   printf(" FUSED-CFU VERSION (3x3/5x5 depthwise, hard-swish, squeeze-excite)\n");
   printf("========================================\n");
-  printf("Model             : mobilenetv3_small_full_int8.tflite\n");
+  printf("Model             : mobilenetv3_small_full_int8.tflite (percentile-calibrated int8)\n");
   printf("Input             : embedded image\n");
   printf("Resolution        : 224 x 224 x 3\n");
   printf("External input    : UINT8 (converted to INT8 by -128)\n");

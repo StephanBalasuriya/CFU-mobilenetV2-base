@@ -8,6 +8,11 @@ fused projects, so `tools/compare_runs.py` can compare any of them.
 10 inverted-residual blocks run on the CFU: **8 blocks with 5x5 depthwise + hard-swish + squeeze-and-excite** and 2 plain 3x3 blocks.
 Stem, the first block (no expansion conv), residual adds, input rescale, global pooling, the SE mini-convs and the head stay on the CPU.
 
+> **Model quality note.** The printed class used to look wrong although the CFU is exact: standard int8 conversion of this
+> network loses most of its accuracy (16.5% top-1 on held-out photos; float 67.9%). `model/` now holds a percentile-calibrated
+> model (51.5% top-1 on the same photos, 57.3% under TFLM; the embedded snake image -> green_mamba 0.67). The original is in
+> `model_original/`. `docs/MODEL_QUALITY.md` has the measurements and `tools/percentile_calibrate.py` reproduces the model.
+
 ## What the CFU does that the MobileNetV2 CFU did not
 
 | feature | how (details: docs/DESIGN_5x5_HSWISH_SE.md) |

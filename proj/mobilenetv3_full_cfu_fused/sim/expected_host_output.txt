@@ -1,11 +1,18 @@
-# Reference output of the PLAIN (no CFU) TFLM interpreter for inputs/cat.jpg (src/cat_image.h) with
-# model/mobilenetv3_small_full_int8.tflite, produced on a PC from this repo's vendored TFLM. Every correct run
-# (CPU only or fused CFU) must print exactly these values (same format as the app's 'MobileNetV3 Classification Result').
+# Reference output of the PLAIN (no CFU) TFLM interpreter for inputs/cat.dat (src/cat_image.h) with the
+# percentile-calibrated model/mobilenetv3_small_full_int8.tflite, produced on a PC from this repo's vendored TFLM.
+# Every correct run (CPU only or fused CFU) must print exactly these values. The image is a green snake.
 Min  = 0 x 10^-6
-Max  = 93750 x 10^-6
-Mean = 753 x 10^-6
-Top-1 class index : 38
-Top-1 score       : 93750 x 10^-6
+Max  = 671875 x 10^-6
+Mean = 906 x 10^-6
+Top-1 class index : 64
+Top-1 score       : 671875 x 10^-6
+Top-1 class name  : green_mamba
+Top-5:
+  #1    64  green_mamba                671875 x 10^-6
+  #2    55  green_snake                160156 x 10^-6
+  #3    47  African_chameleon          27343 x 10^-6
+  #4    59  vine_snake                 19531 x 10^-6
+  #5    53  ringneck_snake             7812 x 10^-6
 output[0] = 0 x 10^-6
 output[1] = 0 x 10^-6
 output[2] = 0 x 10^-6
