@@ -64,7 +64,7 @@ def save_capture(base, frame_rgb, data):
 class SerialTransport:
     def __init__(self, port, baud):
         import serial
-        self.ser = serial.Serial(port, baud, timeout=0.2)
+        self.ser = serial.serial_for_url(port, baud, timeout=0.2)
 
     def write(self, b):
         self.ser.write(b)
