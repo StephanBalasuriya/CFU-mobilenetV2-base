@@ -64,7 +64,7 @@ def save_capture(base, frame_rgb, data):
 class SerialTransport:
     def __init__(self, port, baud):
         import serial
-        self.ser = serial.serial_for_url(port, baud, timeout=0.2)
+        self.ser = serial.Serial(port, baud, timeout=0.2)
 
     def write(self, b):
         self.ser.write(b)
@@ -100,40 +100,66 @@ class ProcTransport:
 
 
 class BoardLink:
+    """Line-oriented link to the board/simulator.  Lines normally come from the transport (UART / socket); with
+    ignore_transport_lines the transport is only read to keep it drained and lines are fed from elsewhere via feed()
+    (renode_webcam.py reads them from Renode's console log)."""
     def __init__(self, transport, verbose=False):
         self.t = transport
         self.q = queue.Queue()
         self.verbose = verbose
         self.alive = True
+        self.dead = False                 # the transport reader stopped (and lines come from the transport)
+        self.reader_error = None
+        self.ignore_transport_lines = False
         threading.Thread(target=self._reader, daemon=True).start()
+
+    def feed(self, line):
+        self.q.put(line)
 
     def _reader(self):
         buf = b""
         while self.alive:
             try:
                 chunk = self.t.read_chunk()
-            except Exception:
+            except Exception as e:
+                self.reader_error = repr(e)
                 break
             if chunk == b"" and isinstance(self.t, ProcTransport):
                 break
+            if self.ignore_transport_lines:
+                continue
             buf += chunk
             while b"\n" in buf:
                 line, buf = buf.split(b"\n", 1)
                 self.q.put(line.decode("utf-8", "replace").rstrip("\r"))
-        self.q.put(None)
+        if not self.ignore_transport_lines:
+            self.dead = True
+            self.q.put(None)
 
     def _get(self, timeout):
         try:
             return self.q.get(timeout=timeout)
         except queue.Empty:
-            return ""
+            return None if self.dead else ""
 
     def drain(self):
         try:
             while True:
-                self.q.get_nowait()
+                if self.q.get_nowait() is None:      # never swallow the "reader stopped" marker
+                    self.q.put(None)
+                    break
         except queue.Empty:
             pass
+
+    def send(self, data):
+        """write to the board; one reconnect attempt if the transport supports it"""
+        try:
+            self.t.write(data)
+        except OSError:
+            if hasattr(self.t, "reconnect") and self.t.reconnect():
+                self.t.write(data)
+            else:
+                raise
 
     def wait_ready(self, timeout=120, auto_menu=True):
         """Ping until the firmware answers '@@READY'.  If the board sits at the CFU-Playground main menu,
@@ -158,15 +184,24 @@ class BoardLink:
                 return line
         raise TimeoutError("no '@@READY' from the board (is the firmware loaded and running?)")
 
-    def classify(self, payload, ack_timeout=60, result_timeout=1800, progress=None):
+    def classify(self, payload, ack_timeout=60, result_timeout=1800, progress=None, chunk=1024, delay=0.0,
+                 send_fn=None, on_ack=None, heartbeat=None):
+        """chunk/delay: bytes per write and pause after each write.  A real board needs neither (the UART itself is the
+        bottleneck); the simulated UART of Renode has a tiny receive FIFO, so there the bytes are paced.  After a failed
+        transfer (checksum NAK / no answer) the next attempt uses smaller chunks and longer pauses."""
         frame = b"IMG!" + struct.pack("<I", len(payload)) + payload + struct.pack("<I", fnv1a(payload))
         for attempt in range(3):
             self.drain()
             t0 = time.time()
-            for i in range(0, len(frame), 1024):
-                self.t.write(frame[i:i + 1024])
-                if progress:
-                    progress(min(i + 1024, len(frame)), len(frame))
+            if send_fn is not None:                      # e.g. Renode: the picture is placed in the board's RAM
+                send_fn(payload)
+            else:
+                for i in range(0, len(frame), chunk):
+                    self.t.write(frame[i:i + chunk])
+                    if delay:
+                        time.sleep(delay)
+                    if progress:
+                        progress(min(i + chunk, len(frame)), len(frame))
             send_s = time.time() - t0
             verdict = None
             t1 = time.time()
@@ -180,16 +215,25 @@ class BoardLink:
                     verdict = line; break
             if verdict == "ack":
                 break
-            print("   transfer failed (%s), retry %d/3" % (verdict or "no answer", attempt + 1))
+            print("   transfer failed (%s), retry %d/3%s" % (verdict or "no answer", attempt + 1,
+                                                          "" if send_fn else " with smaller, slower chunks"))
+            chunk = max(4, chunk // 2)
+            delay = min(0.05, max(delay, 0.001) * 2)
         else:
             raise RuntimeError("image transfer failed 3 times")
 
+        if on_ack:
+            on_ack()
         res = {"send_s": send_s, "profile": [], "fused": None, "cycles": None, "top5": [], "logits": None}
         t2 = time.time()
+        last_hb = t2
         while time.time() - t2 < result_timeout:
             line = self._get(1.0)
             if line is None:
                 raise RuntimeError("connection closed during inference")
+            if heartbeat and time.time() - last_hb >= 30:
+                last_hb = time.time()
+                heartbeat(time.time() - t2)
             if not line:
                 continue
             if line.startswith("@@END"):

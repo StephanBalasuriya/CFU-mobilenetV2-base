@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define IMGSRV_MAILBOX 1                    // also accept pictures placed directly in RAM (Renode, see image_server.h)
+
 #include "fused_dsc.h"
 #include "image_server.h"
 #include "models/mnv2/mobilenetv2_a035_224_int8.h"
@@ -33,7 +35,8 @@ static void mnv2_webcam_run(void) {
   printf("Loading MobileNetV2 model...\n");
   tflite_load_model(mobilenetv2_a035_224_int8, mobilenetv2_a035_224_int8_len);
   printf("Model loaded successfully.\n");
-  imgsrv::Serve(infer_one, "fused_dsc_cfu");
+  imgsrv::Serve(infer_one, "fused_dsc_cfu");     // returns when the PC sends "BYE!"
+  printf("Webcam server finished - back to the menu.\n");
 }
 
 extern "C" void do_proj_menu(void) { mnv2_webcam_run(); }

@@ -5,6 +5,16 @@ and **MobileNetV2 a0.35 INT8 runs on the FPGA with the fused Expansion->Depthwis
 (same model, same CFU and same TFLM integration as `fused_cfu_with_mobilenetv2`). The class name and cycle counts
 are printed on the PC after every picture.
 
+## Run it under Renode with the webcam (no board needed)
+
+```
+cd proj/fused_cfu_mobilenetv2_webcam      # inside the cfu-common environment
+make renode-webcam                        # instead of `make renode`
+```
+Press **3** in the terminal that opens: the webcam loop starts (5 pictures, one every 2 minutes), every result
+(predicted class, top-5, cycle counts) is printed there, and after the last picture the menu comes back.
+Details, options and troubleshooting: `docs/RENODE_WEBCAM.md`.
+
 ## Why there is a PC program
 
 The Nexys board has no camera, so the webcam is on the PC. The PC converts each frame, sends it to the board over the

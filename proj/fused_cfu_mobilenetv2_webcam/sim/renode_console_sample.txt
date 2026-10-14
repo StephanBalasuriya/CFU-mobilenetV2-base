@@ -1,0 +1,64 @@
+[31;1m(monitor) [0mi $CWD/webcam_uart.resc
+
+[92m12:56:21.5212 [INFO] Including script: /home/sasmitha-jayasinghe/Documents/github/CFU-mobilenetV2-base/proj/fused_cfu_mobilenetv2_webcam/build/renode/webcam_uart.resc
+[39;49m[92m12:56:22.8648 [INFO] digilent_arty: Machine started.
+[39;49m[92m12:56:22.9272 [INFO] uart: [host: 0.34s (+0.34s)|virt: 24.7ms (+24.7ms)] Hello, World!
+[39;49m[92m12:56:22.9273 [INFO] uart: [host: 0.34s (+0.34s)|virt: 24.7ms (+24.7ms)] Hello, World!
+[39;49m[92m12:56:22.9277 [INFO] uart: [host: 0.34s (+0.42ms)|virt:     24.7ms (+0s)] 
+[39;49m[92m12:56:22.9277 [INFO] uart: [host: 0.34s (+0.43ms)|virt:     24.7ms (+0s)] 
+[39;49m[92m12:56:22.9281 [INFO] uart: [host:  0.34s (+0.7ms)|virt:     24.7ms (+0s)] CFU Playground
+[39;49m[92m12:56:22.9282 [INFO] uart: [host:  0.34s (+0.55ms)|virt:     24.7ms (+0s)] CFU Playground
+[39;49m[92m12:56:22.9310 [INFO] uart: [host:  0.34s (+0.3ms)|virt:     24.7ms (+0s)]  3: Project menu
+[39;49m[92m12:56:22.9310 [INFO] uart: [host:  0.34s (+0.29ms)|virt:     24.7ms (+0s)]  3: Project menu
+[39;49m[92m12:56:22.9329 [INFO] uart: [host:  0.35s (+0.26ms)|virt:     24.8ms (+0s)]  8: Embench IoT
+[39;49m[92m12:56:22.9329 [INFO] uart: [host:  0.34s (+0.26ms)|virt:     24.8ms (+0s)]  8: Embench IoT
+[39;49m[33;1m(digilent_arty) [0m[92m12:56:31.4298 [INFO] uart: [host:   8.84s (+8.5s)|virt: 17.68s (+17.65s)] main> 3
+[39;49m[92m12:56:31.4299 [INFO] uart: [host:   8.84s (+8.5s)|virt: 17.68s (+17.65s)] main> 3
+[39;49m[92m12:56:31.5045 [INFO] uart: [host:  8.92s (+0.96ms)|virt:  17.76s (+0.1ms)] @@MAILBOX addr=0x402c28a0 size=150544
+[39;49m[92m12:56:31.5045 [INFO] uart: [host:  8.92s (+0.96ms)|virt:  17.76s (+0.1ms)] @@MAILBOX addr=0x402c28a0 size=150544
+[39;49m[92m12:56:31.5055 [INFO] uart: [host:  8.92s (+0.95ms)|virt:     17.76s (+0s)] @@READY mode=fused_dsc_cfu bytes=150528
+[39;49m[92m12:56:31.5055 [INFO] uart: [host:  8.92s (+0.95ms)|virt:     17.76s (+0s)] @@READY mode=fused_dsc_cfu bytes=150528
+[39;49mpause
+
+Pausing emulation...
+
+
+[92m12:56:34.8299 [INFO] digilent_arty: Machine paused.
+[39;49m[33;1m(digilent_arty) [0msysbus LoadBinary @/home/x/captures/20261014_125634.dat 0x402c28b0
+
+[33;1m(digilent_arty) [0mstart
+
+Starting emulation...
+
+
+[92m12:56:34.8491 [INFO] digilent_arty: Machine resumed.
+[39;49m[92m12:56:34.8553 [INFO] uart: [host:  12.27s (+3.35s)|virt:  24.52s (+6.76s)] @@ACK len=150528 fnv=0xf32f562c
+[39;49m[92m12:56:34.8554 [INFO] uart: [host:  12.27s (+3.35s)|virt:  24.52s (+6.76s)] @@ACK len=150528 fnv=0xf32f562c
+[39;49m[92m12:56:34.8647 [INFO] uart: [host: 12.28s (+7.39ms)|virt: 24.53s (+12.1ms)] Copied 150528 RAW UINT8 bytes at 0x40333510
+[39;49m[92m12:56:34.8648 [INFO] uart: [host:  12.28s (+7.4ms)|virt: 24.53s (+12.1ms)] Copied 150528 RAW UINT8 bytes at 0x40333510
+[39;49m[33;1m(digilent_arty) [0m[92m12:56:38.7489 [INFO] uart: [host:  16.16s (+3.88s)|virt:  27.65s (+3.12s)] .......................................................................
+[39;49m[92m12:56:38.7490 [INFO] uart: [host:  16.16s (+3.88s)|virt:  27.65s (+3.12s)] .......................................................................
+[39;49m[92m12:56:38.7499 [INFO] uart: [host: 16.16s (+0.47ms)|virt:     27.65s (+0.1ms)] 0,QUANTIZE,221
+[39;49m[92m12:56:38.7500 [INFO] uart: [host: 16.16s (+0.47ms)|virt:     27.65s (+0.1ms)] 0,QUANTIZE,221
+[39;49m[92m12:56:38.7503 [INFO] uart: [host:  16.16s (+0.4ms)|virt:  27.65s (+0.1ms)] 1,CONV_2D,110423
+[39;49m[92m12:56:38.7504 [INFO] uart: [host:  16.16s (+0.4ms)|virt:  27.65s (+0.1ms)] 1,CONV_2D,110423
+[39;49m[92m12:56:38.7837 [INFO] uart: [host:  16.2s (+0.53ms)|virt:     27.65s (+0s)] Perf counters not enabled.
+[39;49m[92m12:56:38.7837 [INFO] uart: [host:  16.2s (+0.53ms)|virt:     27.65s (+0s)] Perf counters not enabled.
+[39;49m[92m12:56:38.7849 [INFO] uart: [host:  16.2s (+1.19ms)|virt:  27.65s (+0.1ms)]    312M (    311867000 )  cycles total
+[39;49m[92m12:56:38.7849 [INFO] uart: [host:  16.2s (+1.19ms)|virt:  27.65s (+0.1ms)]    312M (    311867000 )  cycles total
+[39;49m[92m12:56:38.7861 [INFO] uart: [host:  16.2s (+1.21ms)|virt:     27.65s (+0s)] @@FUSED blocks=16 hw_cycles=1837367 cpu_cycles=5510601
+[39;49m[92m12:56:38.7861 [INFO] uart: [host:  16.2s (+1.21ms)|virt:     27.65s (+0s)] @@FUSED blocks=16 hw_cycles=1837367 cpu_cycles=5510601
+[39;49m[92m12:56:38.7879 [INFO] uart: [host:  16.2s (+1.79ms)|virt:  27.65s (+1.9ms)] @@RESULT frame=1 top1=785 score_e6=136718
+[39;49m[92m12:56:38.7879 [INFO] uart: [host:  16.2s (+1.79ms)|virt:  27.65s (+1.9ms)] @@RESULT frame=1 top1=785 score_e6=136718
+[39;49m[92m12:56:38.7898 [INFO] uart: [host:  16.2s (+1.92ms)|virt:  27.65s (+0.1ms)] @@TOP5 785:136718 487:58593 617:39062 457:23437 593:23437
+[39;49m[92m12:56:38.7898 [INFO] uart: [host:  16.2s (+1.92ms)|virt:  27.65s (+0.1ms)] @@TOP5 785:136718 487:58593 617:39062 457:23437 593:23437
+[39;49m[92m12:56:38.8452 [INFO] uart: [host: 16.26s (+55.35ms)|virt:  27.66s (+5.1ms)] @@LOGITS_E6 0,0,0,0,0,3906,0,0,136718,0,0
+[39;49m[92m12:56:38.8453 [INFO] uart: [host: 16.26s (+55.36ms)|virt:  27.66s (+5.1ms)] @@LOGITS_E6 0,0,0,0,0,3906,0,0,136718,0,0
+[39;49m[92m12:56:38.8455 [INFO] uart: [host:  16.26s (+0.16ms)|virt:     27.66s (+0s)] @@END
+[39;49m[92m12:56:38.8455 [INFO] uart: [host:  16.26s (+0.14ms)|virt:     27.66s (+0s)] @@END
+[39;49mpause
+
+Pausing emulation...
+
+
+[33;1m(digilent[92m_arty) [0ms12:57:34.8840 [INFO] digilent_arty: Machine paused.

@@ -36,3 +36,21 @@ endif
 RUN_MENU_ITEMS := 3 1
 
 include ../proj.mk
+
+# ---------------------------------------------------------------------------------------------------------------------
+# make renode-webcam   -- like `make renode`, but the PC webcam feeds the simulated board.
+#
+# Builds the firmware and the Renode scripts (renode-scripts), starts Renode headless with the board's UART on a local
+# socket, and turns THIS terminal into the board's console (pc/renode_webcam.py).  Press 3 (project menu): the webcam
+# loop starts -- by default 5 pictures, one every 120 s -- and each result (predicted class, top-5, cycle counts) is
+# printed here.  After the last picture the firmware returns to its menu.
+#
+#   make renode-webcam                                    5 pictures, every 2 minutes
+#   make renode-webcam WEBCAM_ARGS="--count 3 --interval 60 --camera 1"
+#   make renode-webcam WEBCAM_ARGS="--tcp-port 4400"      if port 4321 is taken
+# ---------------------------------------------------------------------------------------------------------------------
+WEBCAM_ARGS ?=
+.PHONY: renode-webcam
+renode-webcam: renode-scripts
+	python3 $(PROJ_DIR)/pc/renode_webcam.py --renode $(RENODE_DIR)/renode --workdir $(BUILD_DIR)/renode \
+	    --resc $(TARGET).resc --out-dir $(PROJ_DIR)/captures --count 5 --interval 120 $(WEBCAM_ARGS)
