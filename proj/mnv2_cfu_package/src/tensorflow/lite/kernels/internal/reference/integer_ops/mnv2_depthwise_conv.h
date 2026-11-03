@@ -13,8 +13,54 @@
 #include "mnv2_cfu.h"
 #include "tensorflow/lite/kernels/internal/common.h"
 
+#ifdef DW3X3_PROFILE
+#include "perf.h"
+#include <stdio.h>
+#endif
+
 namespace tflite {
 namespace reference_integer_ops {
+
+#ifdef DW3X3_PROFILE
+struct Mnv2Dw3x3ProfileCounters {
+  uint64_t operand_fetch_load_shift = 0;
+  uint64_t run_get_result = 0;
+  uint64_t output_store_postprocess = 0;
+  uint64_t software_border = 0;
+  uint64_t total_start = 0;
+};
+
+static Mnv2Dw3x3ProfileCounters mnv2_dw3x3_profile;
+
+inline uint64_t Mnv2Dw3x3ProfileStart() {
+  return perf_get_mcycle64();
+}
+
+inline void Mnv2Dw3x3ProfileAdd(uint64_t* bucket, uint64_t start) {
+  *bucket += Mnv2Dw3x3ProfileStart() - start;
+}
+
+inline void Mnv2Dw3x3ProfileReset() {
+  mnv2_dw3x3_profile = Mnv2Dw3x3ProfileCounters{};
+  mnv2_dw3x3_profile.total_start = Mnv2Dw3x3ProfileStart();
+}
+
+inline void Mnv2Dw3x3ProfileReport() {
+  const uint64_t total =
+      Mnv2Dw3x3ProfileStart() - mnv2_dw3x3_profile.total_start;
+  printf(
+      "DW3X3 profile: operand_fetch_load_shift=%llu "
+      "run_get_result=%llu output_store_postprocess=%llu "
+      "software_border=%llu total=%llu\n",
+      static_cast<unsigned long long>(
+          mnv2_dw3x3_profile.operand_fetch_load_shift),
+      static_cast<unsigned long long>(mnv2_dw3x3_profile.run_get_result),
+      static_cast<unsigned long long>(
+          mnv2_dw3x3_profile.output_store_postprocess),
+      static_cast<unsigned long long>(mnv2_dw3x3_profile.software_border),
+      static_cast<unsigned long long>(total));
+}
+#endif
 
 inline void Mnv2DepthwiseConvPerChannel3x3(
     const DepthwiseParams& params, const int32_t* output_multiplier,
@@ -32,6 +78,9 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
   const int input_offset = params.input_offset;
   const int output_offset = params.output_offset;
 
+#ifdef DW3X3_PROFILE
+  Mnv2Dw3x3ProfileReset();
+#endif
   CFU_DW3X3_CONFIGURE(input_offset, params.weights_offset);
 
   for (int batch = 0; batch < batches; ++batch) {
@@ -48,6 +97,9 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
         for (int channel = 0; channel < input_depth; ++channel) {
           int32_t acc = 0;
           if (full_window) {
+#ifdef DW3X3_PROFILE
+            const uint64_t fetch_start = Mnv2Dw3x3ProfileStart();
+#endif
             for (int word = 0; word < 3; ++word) {
               uint32_t input_word = 0;
               uint32_t filter_word = 0;
@@ -70,9 +122,20 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
               }
               CFU_DW3X3_LOAD(input_word, filter_word);
             }
+#ifdef DW3X3_PROFILE
+            Mnv2Dw3x3ProfileAdd(
+                &mnv2_dw3x3_profile.operand_fetch_load_shift, fetch_start);
+            const uint64_t run_start = Mnv2Dw3x3ProfileStart();
+#endif
             CFU_DW3X3_RUN();
             acc = static_cast<int32_t>(CFU_DW3X3_GET_RESULT());
+#ifdef DW3X3_PROFILE
+            Mnv2Dw3x3ProfileAdd(&mnv2_dw3x3_profile.run_get_result, run_start);
+#endif
           } else {
+#ifdef DW3X3_PROFILE
+            const uint64_t border_start = Mnv2Dw3x3ProfileStart();
+#endif
             for (int filter_y = 0; filter_y < 3; ++filter_y) {
               for (int filter_x = 0; filter_x < 3; ++filter_x) {
                 const int in_x = in_x_origin + filter_x;
@@ -89,8 +152,15 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
                 }
               }
             }
+#ifdef DW3X3_PROFILE
+            Mnv2Dw3x3ProfileAdd(&mnv2_dw3x3_profile.software_border,
+                                border_start);
+#endif
           }
 
+#ifdef DW3X3_PROFILE
+          const uint64_t store_start = Mnv2Dw3x3ProfileStart();
+#endif
           if (bias_data) {
             acc += bias_data[channel];
           }
@@ -101,6 +171,10 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
           acc = std::min(acc, params.quantized_activation_max);
           output_data[Offset(output_shape, batch, out_y, out_x, channel)] =
               static_cast<int8_t>(acc);
+#ifdef DW3X3_PROFILE
+          Mnv2Dw3x3ProfileAdd(
+              &mnv2_dw3x3_profile.output_store_postprocess, store_start);
+#endif
         }
       }
     }

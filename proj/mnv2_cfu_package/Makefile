@@ -12,6 +12,11 @@ DEFINES += NDEBUG
 # Enable the MobileNetV2 CFU path.
 DEFINES += ACCEL_CONV
 
+# Opt-in execution-time buckets for the 3x3 depthwise CFU path.
+ifeq '$(DW3X3_PROFILE)' '1'
+DEFINES += DW3X3_PROFILE
+endif
+
 # Keep the model and application isolated from upstream mnv2_first.
 export MNv2_BASELINE := 1
 
