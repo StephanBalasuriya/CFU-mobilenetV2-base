@@ -135,6 +135,9 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                         tflite::micro::GetTensorShape(output),
                         tflite::micro::GetTensorData<int8_t>(output));
 #endif
+#ifdef DW3X3_PROFILE
+      reference_integer_ops::Mnv2Dw3x3ProfileReport();
+#endif
       return kTfLiteOk;
     }
   }

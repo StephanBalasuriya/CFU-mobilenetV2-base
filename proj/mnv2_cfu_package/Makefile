@@ -18,6 +18,12 @@ ifeq '$(DW3X3_VERIFY)' '1'
 DEFINES += DW3X3_VERIFY
 endif
 
+# Opt-in cycle buckets for the 3x3 depthwise CFU path. Not for official
+# performance measurements because the cycle-counter reads add overhead.
+ifeq '$(DW3X3_PROFILE)' '1'
+DEFINES += DW3X3_PROFILE
+endif
+
 # Keep the model and application isolated from upstream mnv2_first.
 export MNv2_BASELINE := 1
 

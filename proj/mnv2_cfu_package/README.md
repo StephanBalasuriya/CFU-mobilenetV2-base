@@ -112,6 +112,32 @@ Record total cycles and the operator profiler's
 `DEPTHWISE_CONV_2D`/`CONV_2D` ticks from `build/software.log`. The expected
 functional check remains the known class-64 result (approximately 0.406250).
 
+## T2: 3x3 depthwise execution-time breakdown
+
+Build a profiling-only image for the five requested buckets:
+
+```bash
+make clean
+DW3X3_PROFILE=1 make software
+DW3X3_PROFILE=1 make load TARGET=digilent_nexys4ddr \
+    TTY=/dev/ttyUSB1 UART_SPEED=115200
+```
+
+The firmware prints one `DW3X3 profile:` line for each eligible depthwise
+layer. Its fields are:
+
+```text
+operand_fetch_load_shift  bucket 0
+run_get_result            bucket 1
+output_store_postprocess  bucket 2
+software_border           bucket 3
+total                     bucket 4
+```
+
+Use this profiling build only for T2. Cycle-counter reads add overhead, so
+do not use its total as the official T1 result. Rebuild without
+`DW3X3_PROFILE=1` for T1 measurements.
+
 ## Important
 
 The upstream CFU-Playground documentation describes the framework as a way
