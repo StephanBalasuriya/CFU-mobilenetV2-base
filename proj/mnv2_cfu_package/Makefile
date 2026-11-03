@@ -24,6 +24,10 @@ ifeq '$(DW3X3_PROFILE)' '1'
 DEFINES += DW3X3_PROFILE
 endif
 
+ifeq '$(DW3X3_NO_SLIDE)' '1'
+DEFINES += DW3X3_NO_SLIDE
+endif
+
 # Keep the model and application isolated from upstream mnv2_first.
 export MNv2_BASELINE := 1
 

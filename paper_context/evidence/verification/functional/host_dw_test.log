@@ -1,0 +1,8 @@
+# Host equivalence test, 3x3 depthwise kernel vs TFLM reference
+# commit 786bb109 (working tree; kernel header uncommitted changes: see git diff)
+# date 2026-11-03
+# command: proj/mnv2_cfu_package/tools/build_host_dw_test.sh
+coverage: output_elems=1591717 cfu_windows(RUN)=1429082 software_border_elems=162635 LOAD=1029990 SHIFT_RIGHT=1085752
+coverage: cases_with_sliding=204 cases_load_only=204 cases_with_software_border=204 protocol_errors=0
+cases=408 mismatches=0
+# exit status 0

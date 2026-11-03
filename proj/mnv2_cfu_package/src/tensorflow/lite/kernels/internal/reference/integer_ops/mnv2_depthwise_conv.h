@@ -139,7 +139,11 @@ inline void Mnv2DepthwiseConvPerChannel3x3(
   // test as full_window below). In fully-inside rows these outputs are
   // computed channel -> x so the CFU can keep one channel's weights and
   // shift the input window right by one column per output.
-  const bool slide_enabled = params.stride_width == 1;
+  #ifdef DW3X3_NO_SLIDE
+    const bool slide_enabled = false;
+  #else
+    const bool slide_enabled = params.stride_width == 1;
+  #endif
   int slide_x_begin = 0;
   int slide_x_end = 0;
   if (slide_enabled) {
