@@ -1,0 +1,2 @@
+Place model_mobilenetv2_160_035.tflite here.
+This package intentionally does not contain the binary model.

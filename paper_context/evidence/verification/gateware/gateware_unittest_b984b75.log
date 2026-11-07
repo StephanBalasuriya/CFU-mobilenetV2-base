@@ -1,0 +1,38 @@
+# Gateware unit tests — mnv2_cfu_package
+# Commit: b984b75 (branch mindi)
+# Date: 2026-10-07T05:31:29Z
+# Command (from proj/mnv2_cfu_package): ../../scripts/pyrun -m unittest discover -s gateware -t . -p 'test_*.py' -v
+# Environment: Amaranth pysim (simulation, not FPGA)
+
+test_vectors (gateware.test_depthwise_macc.Depthwise3x3MacTest) ... ok
+test_load_after_shift_and_latency (gateware.test_depthwise_macc.Depthwise3x3ShiftRightTest)
+LOAD path keeps its latency; SHIFT adds one refresh cycle. ... ok
+test_shift_right_updates_window_only (gateware.test_depthwise_macc.Depthwise3x3ShiftRightTest) ... ok
+test_sliding_row_signed_with_offsets (gateware.test_depthwise_macc.Depthwise3x3ShiftRightTest)
+LOAD first window, then SHIFT_RIGHT across a row of signed data. ... ok
+test (gateware.test_macc.AccumulatorTest) ... ok
+test (gateware.test_macc.ByteToWordShifterTest) ... ok
+test_2dconv (gateware.test_mnv2_cfu.CfuTest) ... ok
+test_depthwise_3x3_shift_right (gateware.test_mnv2_cfu.CfuTest) ... ok
+test_input_store (gateware.test_mnv2_cfu.CfuTest) ... ok
+test_simple (gateware.test_mnv2_cfu.CfuTest) ... ok
+test (gateware.test_output.OutputQueueGetterTest) ... ok
+test (gateware.test_post_process.PostProcessXetterTest) ... ok
+test (gateware.test_post_process.PostProcessorTestCase) ... ok
+test (gateware.test_registerfile.RegisterFileInstructionTest) ... ok
+test_setget (gateware.test_registerfile.RegisterSetterTest) ... ok
+test (gateware.test_sequencing.DelayerTest) ... ok
+test (gateware.test_sequencing.GateCalculatorTest) ... ok
+test (gateware.test_sequencing.SequencerTest) ... ok
+test (gateware.test_sequencing.UpCounterTest) ... ok
+test_restart_on_init (gateware.test_store.InputStoreTest) ... ok
+test_size2 (gateware.test_store.InputStoreTest) ... ok
+test_size20 (gateware.test_store.InputStoreTest) ... ok
+test_size30 (gateware.test_store.InputStoreTest) ... ok
+test_size8 (gateware.test_store.InputStoreTest) ... ok
+test (gateware.test_store.ParamStoreTest) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 6.099s
+
+OK

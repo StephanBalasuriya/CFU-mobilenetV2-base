@@ -33,8 +33,15 @@ ifndef CFU_ROOT
 endif
 
 PROJ_DIR:=  $(CFU_ROOT)/proj/$(PROJ)
+
+ifdef NO_CFU
+CFU_V:=
+CFU_ARGS:=
+else
 CFU_V:=     $(if $(wildcard $(PROJ_DIR)/cfu.sv), $(PROJ_DIR)/cfu.sv, $(PROJ_DIR)/cfu.v)
 CFU_ARGS:=  --cpu-cfu $(CFU_V)
+endif
+
 TARGET_ARGS:= --target $(TARGET)
 SOFTWARE_ARGS:= --software-load --software-path $(PROJ_DIR)/build/software.bin
 
@@ -104,6 +111,8 @@ clean:
 	@echo Removing $(OUT_DIR)
 	rm -rf $(OUT_DIR)
 
+ifndef NO_CFU
+
 $(CFU_V):
 	$(error $(CFU_V) not found. $(HELP_MESSAGE))
 
@@ -113,3 +122,15 @@ $(BIOS_BIN): $(CFU_V)
 $(BITSTREAM): $(CFU_V)
 	@echo Building bitstream for $(TARGET). CFU option: $(CFU_ARGS)
 	$(TARGET_RUN) --build
+
+else
+
+$(BIOS_BIN):
+	@echo "Building CPU-only LiteX software (NO_CFU=1)"
+	$(TARGET_RUN)
+
+$(BITSTREAM):
+	@echo "Building CPU-only bitstream (NO_CFU=1)"
+	$(TARGET_RUN) --build
+
+endif
